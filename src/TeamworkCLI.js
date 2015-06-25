@@ -1,7 +1,14 @@
 import Promise from "bluebird";
 import inquirer from "inquirer";
 import chalk from "chalk";
+import rc from "rc";
 import Teamwork from "./Teamwork";
+
+/**
+ * The prefix before the "rc" files. e.g. .teamworkrc
+ * @type {String}
+ */
+const TEAMWORK_RC_PREFIX = "teamwork";
 
 export default class TeamworkCLI {
     /**
@@ -69,3 +76,6 @@ export default class TeamworkCLI {
 
 // Export handy acces to Chalk
 TeamworkCLI.color = chalk;
+
+// Use rc to find the config
+TeamworkCLI.config = rc(TEAMWORK_RC_PREFIX);

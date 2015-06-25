@@ -3,6 +3,9 @@ import debug from "debug";
 // Weird Babel bug, won't translate `export debug` to this.
 exports.Debug = debug;
 
+// To turn off logs, comment out the below line
+debug.enable("*");
+
 /**
  * Tells the programmer that you cannot call
  * this method because it is abstact and needs

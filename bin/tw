@@ -1,9 +1,9 @@
-#!/usr/bin/env node
+#!/usr/bin/env babel-node --
 
 // TODO: Babelify executables somehow.
 
-var program = require("commander"),
-    config = require("../package.json");
+import program from "commander";
+import config from "../package.json";
 
 program
     .version(config.version)

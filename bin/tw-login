@@ -4,6 +4,7 @@ import program from "commander";
 import inquirer from "inquirer";
 import TeamworkCLI from "../src/TeamworkCLI";
 import Teamwork from "../src/Teamwork";
+import TeamworkAPI from "../src/TeamworkAPI";
 
 program
     .option("-e, --email <email>", "Your Teamwork login email.", TeamworkCLI.validateInput.bind(null, Teamwork.validateEmail))
@@ -26,7 +27,16 @@ if(!program.auth && !program.email && !program.password) {
     }]).then((answers) => {
         // Find installations associated with the account
         // and ask which one they want to pick
-        
+        return TeamworkAPI.getAccounts(answers.email, answers.password)
+    }).then((accounts) => {
+        return TeamworkCLI.prompt({
+            type: "list",
+            name: "installation",
+            message: "Installation",
+            choices: accounts.map((account) => {
+                return `${account.companyName} (${account.installationUrl})`;
+            })
+        });
     });
 } else {
     if(!program.installation) TeamworkCLI.fail(`The ${TeamworkCLI.color.blue("--installation")} option is required when logging in with a email/password or auth key.`);

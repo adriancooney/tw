@@ -1,0 +1,20 @@
+{
+  "name": "tw",
+  "version": "0.1.0",
+  "description": "Teamwork Projects CLI and git integration.",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "keywords": [
+    "tw"
+  ],
+  "author": "Adrian Cooney <adrian.cooney@teamwork.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "chalk": "^1.0.0",
+    "commander": "^2.8.1",
+    "inquirer": "^0.8.5",
+    "open": "0.0.5"
+  }
+}

@@ -17,6 +17,7 @@ export default class TeamworkCLI {
      * @param  {Number} code   The exit code (default: 1)
      */
     static fail(reason, code = 1) {
+        if(reason instanceof Error) reason = reason.message;
         TeamworkCLI.log(chalk.red("error"), reason);
         process.exit(code);
     }

@@ -3,18 +3,21 @@
 import program from "commander";
 import inquirer from "inquirer";
 import Promise from "bluebird";
-import TeamworkCLI from "../src/TeamworkCLI";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import Teamwork from "../src/Teamwork";
-import TeamworkAPI from "../src/TeamworkAPI";
+import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
+import { Debug } from "../src/library/Debug";
 
-program
-    .option("-e, --email <email>", "Your Teamwork login email.", TeamworkCLI.validateInput.bind(null, Teamwork.validateEmail))
-    .option("-p, --password <password>", "Your Teamwork login password")
-    .option("-a, --auth <auth>", "Your Teamwork authorization key.")
-    .option("-i, --installation <installation>", "Your Teamwork installation address.", Teamwork.parseInstallation)
-    .parse(process.argv);
+const debug = Debug("teamwork:cmd:login");
 
 Promise.try(() => {
+    program
+        .option("-e, --email <email>", "Your Teamwork login email.", TeamworkCLI.validateInput.bind(null, Teamwork.validateEmail))
+        .option("-p, --password <password>", "Your Teamwork login password")
+        .option("-a, --auth <auth>", "Your Teamwork authorization key.")
+        .option("-i, --installation <installation>", "Your Teamwork installation address.", Teamwork.normalizeInstallationURL)
+        .parse(process.argv);
+
     var details = {};
 
     if(!program.auth && !program.email && !program.password) {
@@ -35,8 +38,9 @@ Promise.try(() => {
             // and ask which one they want to pick
             return TeamworkAPI.getAccounts(answers.email, answers.password);
         }).then((accounts) => {
+            if(program.installation) return program.installation;
             // Ask them to pick their installation
-            return TeamworkCLI.prompt({
+            else return TeamworkCLI.prompt({
                 type: "list",
                 name: "installation",
                 message: "Installation",
@@ -47,24 +51,32 @@ Promise.try(() => {
                     }
                 })
             });
-        }).then((installation) => {
-            // Login
-            return TeamworkAPI.login(details.username, details.password, installation);
+        }).then((answers) => {
+            var installation = answers.installation.installationUrl;
+
+            // Login to the API
+            debug("Logging in from prompt: %s, %s", details.email, installation);
+            return TeamworkAPI.login(details.email, details.password, installation);
         });
     } else {
+        // Ensure we have an installation
         if(!program.installation) TeamworkCLI.fail(`The ${TeamworkCLI.color.blue("--installation")} option is required when logging in with a email/password or auth key.`);
 
         if(program.auth) {
             // If were passed an Auth key, login with the auth key
+            debug("Logging in from passed auth key: %s, %s", program.auth, program.installation);
             return TeamworkAPI.loginWithAuth(program.auth, program.installation);
-        } else if(program.username && program.password) {
+        } else if(program.email && program.password) {
             // Login with passed details
-            return TeamworkAPI.login(program.username, program.password, program.installation)
+            debug("Logging via passed in credentials: %s, %s", program.email, program.installation);
+            return TeamworkAPI.login(program.email, program.password, program.installation)
+        } else {
+            throw new CLIError(`Please pass either a ${TeamworkCLI.color.blue("--auth")} key or a ${Teamwork.color.blue("--email")} and ${Teamwork.color.blue("--password")}.`);
         }
     }
 }).then((api) => {
     // Save the details and auth key to their user config
-    return api.getProfile((profile) => {
+    return api.getProfile().then((profile) => {
         // Save the profile
         return TeamworkCLI.set("user", profile);
     }).then(() => {
@@ -73,5 +85,4 @@ Promise.try(() => {
     });
 }).then(() => {
     TeamworkCLI.log(`Successfully logged in. Welcome back ${TeamworkCLI.config.user.name}.`);
-}).catch(TeamworkAPI.LoginError, TeamworkCLI.fail)
-.catch(TeamworkCLI.fail);
+}).catch(TeamworkCLI.fail);

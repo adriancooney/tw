@@ -17,7 +17,7 @@ export default class Teamwork {
      * @return {Object}              { installation {String} }
      */
     static parseInstallation(installation) {
-        var match = installation.match(/^https?:\/\/(\w+)\.teamwork.com/);
+        var match = installation.match(/^(?:https?:\/\/)?(\w+)\.teamwork.com/);
 
         if(!match) throw new ParserError(`Invalid installation URL: ${installation}`);
 
@@ -55,14 +55,14 @@ export default class Teamwork {
 
 export class ValidationError extends Error {
     constructor(reason) {
-        super();
+        super(reason);
         this.message = "Validation Error: " + reason;
     }
 }
 
 export class ParserError extends Error {
     constructor(reason) {
-        super();
+        super(reason);
         this.message = "Parser Error: " + reason;
     }
 }

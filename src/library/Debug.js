@@ -1,3 +1,4 @@
+import request from "request";
 import debug from "debug";
 
 // Weird Babel bug, won't translate `export debug` to this.
@@ -5,6 +6,9 @@ exports.Debug = debug;
 
 // To turn off logs, comment out the below line
 debug.enable("*");
+
+// Enable request's debug mode
+// request.debug = true;
 
 /**
  * Tells the programmer that you cannot call

@@ -90,33 +90,54 @@ export default class TeamworkCLI {
      * @return {Promise}
      */
     static set(name, value) {
-        debug("config set %s = %j", name, value);
 
-        // TODO: Actually save this to a config
-        if(!TeamworkCLI.config) TeamworkCLI.config = {};
         return new Promise((resolve, reject) => {
-            TeamworkCLI.config[name] = value;
+            if(typeof name === "object") {
+                for(var key in name) {
+                    debug("config set %s = %j", key, name[key]);
+                    TeamworkCLI.config[key] = name[key];
+                }
+            } else {
+                debug("config set %s = %j", name, value);
+                TeamworkCLI.config[name] = value;
+            }
 
             // And write the config
-            return TeamworkCLI.writeConfig();
+            return TeamworkCLI.writeConfig(TeamworkCLI.config);
         });
     }
 
     /**
      * Create or rewrite config file for the User in ~/.teamworkrc
+     * @param {Object} config The config object.
      * @return {Promise} 
      */
-    static writeConfig() {
+    static writeConfig(config) {
         // TODO: Write config file to custom location
         return new Promise((resolve, reject) => {
-            var config = Path.resolve(process.env.HOME, `.${TEAMWORK_RC_PREFIX}rc`);
-            fs.writeFile(config, JSON.stringify(TeamworkCLI.config), function(err) {
+            var configPath = Path.resolve(process.env.HOME, `.${TEAMWORK_RC_PREFIX}rc`);
+            fs.writeFile(configPath, JSON.stringify(config), function(err) {
                 if(err) reject(err);
                 else {
-                    debug("Writing config to %s.", config);
+                    debug("Writing config to %s.", configPath);
                     resolve();
                 }
             });
+        });
+    }
+
+    /**
+     * Return an authenticated instance of the Teamwork API
+     * from the config.
+     * @return {Promise}
+     */
+    static getAPI() {
+        Promise.try(() => {
+            var config = TeamworkCLI.config;
+
+            if(!config.api) throw new CLIError("Not logged in. Please login again.");
+
+            return new TeamworkAPI(config.api.auth, config.api.installation);
         });
     }
 }

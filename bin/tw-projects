@@ -1,0 +1,15 @@
+#!/usr/bin/env babel-node --
+
+import program from "commander";
+import inquirer from "inquirer";
+import Promise from "bluebird";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import Teamwork from "../src/Teamwork";
+import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
+import { Debug } from "../src/library/Debug";
+
+TeamworkCLI.getAPI((api) => {
+    return api.getProjects();
+}).then((projects) => {
+    
+}).catch(TeamworkCLI.fail);

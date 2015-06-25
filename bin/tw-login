@@ -80,10 +80,10 @@ Promise.try(() => {
     // Save the details and auth key to their user config
     return api.getProfile().then((profile) => {
         // Save the profile
-        return TeamworkCLI.set("user", profile);
-    }).then(() => {
-        // Save the auth key
-        return TeamworkCLI.set("auth", api.auth);
+        return TeamworkCLI.set({
+            user: profile,
+            api: api.toJSON()
+        });
     });
 }).then(() => {
     TeamworkCLI.log(`Successfully logged in. Welcome back ${TeamworkCLI.config.user.name}.`);

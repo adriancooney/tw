@@ -8,5 +8,6 @@ import config from "../package.json";
 program
     .version(config.version)
     .command("status", "Show the current Teamwork status.")
+    .command("projects", "View and select a project.")
     .command("login", "Login to Teamwork.")
     .parse(process.argv);

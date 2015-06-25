@@ -1,7 +1,13 @@
 import Path from "path";
+import http from "http";
 import Promise from "bluebird";
+import request from "request";
+import Cookie, { Jar } from "cookie-jar";
 import { Debug } from "./library/Debug"
 import Teamwork from "./Teamwork";
+
+import Person from "./model/Person";
+import Person from "./model/Project";
 
 const debug = Debug("teamwork:api");
 
@@ -19,10 +25,21 @@ export default class TeamworkAPI {
      * Make an unauthenticated request to the Teamwork API.
      * @return {Promise} -> {Response}
      */
-    static request(method, url, data) {
+    static request(method, url, data, { headers } = {}) {
         debug("%s %s %j", method, url, data);
-        return new Promise((resolve, reject) => {
-            resolve();
+        return new Promise((resolve) => {
+            request({
+                url, method,
+                json: true,
+                body: data,
+                headers
+            }, (err, response, body) => {
+                if(err) throw err;
+                else {
+                    if(response.statusCode === 200) resolve({ body, response });
+                    else throw new HTTPError(response.statusCode);
+                }
+            });
         });
     }
 
@@ -31,7 +48,11 @@ export default class TeamworkAPI {
      * @return {Promise} -> {Response}
      */
     request(method, path, data) {
-        return TeamworkAPI.request(method, Path.join(this.installation, path), data);
+        return TeamworkAPI.request(method, this.installation + path, data, { 
+            headers: {
+                "Cookie": `tw-auth=${this.auth}`
+            }
+        });
     }
 
     /**
@@ -45,9 +66,21 @@ export default class TeamworkAPI {
         installation = Teamwork.normalizeInstallationURL(installation);
 
         return TeamworkAPI.request("POST", `${installation}/launchpad/v1/login.json`, { 
-            email, password 
-        }).then((response) => {
-            return new TeamworkAPI("example-auth-key", installation);
+            username: email, // TODO: Ask projects why this is like this
+            password 
+        }).then(({ response }) => {
+            // Find the tw-auth cookie
+            var authCookie = response.headers['set-cookie'].find((cookie) => {
+                if(cookie.match(/tw-auth/)) return true
+                else return false;
+            });
+
+            if(authCookie) {
+                var auth = authCookie.match(/tw-auth=([a-zA-Z0-9\-]+)/)[1];
+
+                debug("Successfully logged in Teamwork API on %s (%s).", installation, auth);
+                return new TeamworkAPI(auth, installation);   
+            } else throw new Error("Projects API did not return a tw-auth cookie. Something is very wrong. Let me get back to you on this one..");
         });
     }
 
@@ -89,20 +122,52 @@ export default class TeamworkAPI {
 
     /**
      * Get the current logged in users profile.
-     * @return {Promise} -> {Object}
+     * @return {Promise} -> {Person}
      */
     getProfile() {
-        return this.request("GET", "/profile.json").then(() => {
-            return {
-                name: "Adrian"
-            }
+        return this.request("GET", "/me.json").then(({ body }) => {
+            return new Person(body.person);
         });
+    }
+
+    /**
+     * Return an array of all projects.
+     * @return {Promise} -> {Array[Project]}
+     */
+    getProjects() {
+        return this.requet("GET", "/projects.json").then(({ body }) => {
+            return body.projects.map((project) => {
+                return new Project(project);
+            });
+        });
+    }
+
+    /**
+     * Convert the API to a JSON object.
+     * @return {Object} 
+     */
+    toJSON() {
+        return {
+            auth: this.auth,
+            installation: this.installation
+        }
     }
 }
 
-export class LoginError extends Error {
+export class HTTPError extends Error {
+    constructor(code, message) {
+        super();
+
+        var statusMessage = http.STATUS_CODES[code];
+        this.message = `HTTP Error ${code}: ${message || statusMessage}`
+        this.code = this.statusCode = code;
+        this.statusMessage = statusMessage;
+    }
+}
+
+export class LoginError extends HTTPError {
     constructor(email) { 
-        super(); 
+        super(401); 
         this.message = `Login failed: Invalid credentials. (${email})`;
     }
 }

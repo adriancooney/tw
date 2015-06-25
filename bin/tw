@@ -5,4 +5,5 @@ var program = require("commander"),
 
 program
     .version(config.version)
-    .command("status", "Show the current Teamwork status.");
+    .command("status", "Show the current Teamwork status.")
+    .parse(process.argv);

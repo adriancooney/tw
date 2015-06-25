@@ -18,6 +18,8 @@ Promise.try(() => {
         .option("-i, --installation <installation>", "Your Teamwork installation address.", Teamwork.normalizeInstallationURL)
         .parse(process.argv);
 
+    console.log(TeamworkCLI.config)
+
     var details = {};
 
     if(!program.auth && !program.email && !program.password) {

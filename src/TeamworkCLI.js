@@ -1,3 +1,5 @@
+import fs from "fs";
+import Path from "path";
 import Promise from "bluebird";
 import inquirer from "inquirer";
 import chalk from "chalk";
@@ -89,10 +91,33 @@ export default class TeamworkCLI {
      */
     static set(name, value) {
         debug("config set %s = %j", name, value);
-        
+
         // TODO: Actually save this to a config
         if(!TeamworkCLI.config) TeamworkCLI.config = {};
-        TeamworkCLI.config[name] = value;
+        return new Promise((resolve, reject) => {
+            TeamworkCLI.config[name] = value;
+
+            // And write the config
+            return TeamworkCLI.writeConfig();
+        });
+    }
+
+    /**
+     * Create or rewrite config file for the User in ~/.teamworkrc
+     * @return {Promise} 
+     */
+    static writeConfig() {
+        // TODO: Write config file to custom location
+        return new Promise((resolve, reject) => {
+            var config = Path.resolve(process.env.HOME, `.${TEAMWORK_RC_PREFIX}rc`);
+            fs.writeFile(config, JSON.stringify(TeamworkCLI.config), function(err) {
+                if(err) reject(err);
+                else {
+                    debug("Writing config to %s.", config);
+                    resolve();
+                }
+            });
+        });
     }
 }
 

@@ -18,10 +18,13 @@
     "chalk": "^1.0.0",
     "commander": "^2.8.1",
     "inquirer": "^0.8.5",
-    "open": "0.0.5"
+    "open": "0.0.5",
+    "rc": "^1.0.3"
   },
   "dependencies": {
+    "babel": "^5.6.7",
     "bluebird": "^2.9.30",
+    "debug": "^2.2.0",
     "moment": "^2.10.3"
   }
 }

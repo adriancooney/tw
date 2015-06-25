@@ -1,0 +1,33 @@
+#!/usr/bin/env babel-node --
+
+import program from "commander";
+import inquirer from "inquirer";
+import TeamworkCLI from "../src/TeamworkCLI";
+import Teamwork from "../src/Teamwork";
+
+program
+    .option("-e, --email <email>", "Your Teamwork login email.", TeamworkCLI.validateInput.bind(null, Teamwork.validateEmail))
+    .option("-p, --password <password>", "Your Teamwork login password")
+    .option("-a, --auth <auth>", "Your Teamwork authorization key.")
+    .option("-i, --installation <installation>", "Your Teamwork installation address.", Teamwork.parseInstallation)
+    .parse(process.argv);
+
+if(!program.auth && !program.email && !program.password) {
+    // Prompt for login details
+    TeamworkCLI.prompt([{
+        type: "input",
+        message: "Email",
+        name: "email",
+        validate: TeamworkCLI.inquirerValidateInput.bind(null, Teamwork.validateEmail)
+    }, {
+        type: "password",
+        message: "Password",
+        name: "password"
+    }]).then((answers) => {
+        // Find installations associated with the account
+        // and ask which one they want to pick
+        
+    });
+} else {
+    if(!program.installation) TeamworkCLI.fail(`The ${TeamworkCLI.color.blue("--installation")} option is required when logging in with a email/password or auth key.`);
+}

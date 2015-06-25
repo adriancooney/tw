@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 
+// TODO: Babelify executables somehow.
+
 var program = require("commander"),
     config = require("../package.json");
 
 program
     .version(config.version)
     .command("status", "Show the current Teamwork status.")
+    .command("login", "Login to Teamwork.")
     .parse(process.argv);

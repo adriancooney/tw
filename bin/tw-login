@@ -2,6 +2,7 @@
 
 import program from "commander";
 import inquirer from "inquirer";
+import Promise from "bluebird";
 import TeamworkCLI from "../src/TeamworkCLI";
 import Teamwork from "../src/Teamwork";
 import TeamworkAPI from "../src/TeamworkAPI";
@@ -13,31 +14,64 @@ program
     .option("-i, --installation <installation>", "Your Teamwork installation address.", Teamwork.parseInstallation)
     .parse(process.argv);
 
-if(!program.auth && !program.email && !program.password) {
-    // Prompt for login details
-    TeamworkCLI.prompt([{
-        type: "input",
-        message: "Email",
-        name: "email",
-        validate: TeamworkCLI.inquirerValidateInput.bind(null, Teamwork.validateEmail)
-    }, {
-        type: "password",
-        message: "Password",
-        name: "password"
-    }]).then((answers) => {
-        // Find installations associated with the account
-        // and ask which one they want to pick
-        return TeamworkAPI.getAccounts(answers.email, answers.password)
-    }).then((accounts) => {
-        return TeamworkCLI.prompt({
-            type: "list",
-            name: "installation",
-            message: "Installation",
-            choices: accounts.map((account) => {
-                return `${account.companyName} (${account.installationUrl})`;
-            })
+Promise.try(() => {
+    var details = {};
+
+    if(!program.auth && !program.email && !program.password) {
+        // Prompt for login details
+        return TeamworkCLI.prompt([{
+            type: "input",
+            message: "Email",
+            name: "email",
+            validate: TeamworkCLI.inquirerValidateInput.bind(null, Teamwork.validateEmail)
+        }, {
+            type: "password",
+            message: "Password",
+            name: "password"
+        }]).then((answers) => {
+            details = answers;
+
+            // Find installations associated with the account
+            // and ask which one they want to pick
+            return TeamworkAPI.getAccounts(answers.email, answers.password);
+        }).then((accounts) => {
+            // Ask them to pick their installation
+            return TeamworkCLI.prompt({
+                type: "list",
+                name: "installation",
+                message: "Installation",
+                choices: accounts.map((account) => {
+                    return {
+                        name: `${account.companyName} (${account.installationUrl})`,
+                        value: account
+                    }
+                })
+            });
+        }).then((installation) => {
+            // Login
+            return TeamworkAPI.login(details.username, details.password, installation);
         });
+    } else {
+        if(!program.installation) TeamworkCLI.fail(`The ${TeamworkCLI.color.blue("--installation")} option is required when logging in with a email/password or auth key.`);
+
+        if(program.auth) {
+            // If were passed an Auth key, login with the auth key
+            return TeamworkAPI.loginWithAuth(program.auth, program.installation);
+        } else if(program.username && program.password) {
+            // Login with passed details
+            return TeamworkAPI.login(program.username, program.password, program.installation)
+        }
+    }
+}).then((api) => {
+    // Save the details and auth key to their user config
+    return api.getProfile((profile) => {
+        // Save the profile
+        return TeamworkCLI.set("user", profile);
+    }).then(() => {
+        // Save the auth key
+        return TeamworkCLI.set("auth", api.auth);
     });
-} else {
-    if(!program.installation) TeamworkCLI.fail(`The ${TeamworkCLI.color.blue("--installation")} option is required when logging in with a email/password or auth key.`);
-}
+}).then(() => {
+    TeamworkCLI.log(`Successfully logged in. Welcome back ${TeamworkCLI.config.user.name}.`);
+}).catch(TeamworkAPI.LoginError, TeamworkCLI.fail)
+.catch(TeamworkCLI.fail);

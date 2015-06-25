@@ -1,10 +1,9 @@
 #!/usr/bin/env babel-node --
 
 import program from "commander";
-import inquirer from "inquirer";
 import Promise from "bluebird";
-import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import Teamwork from "../src/Teamwork";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
 import { Debug } from "../src/library/Debug";
 
@@ -15,10 +14,8 @@ Promise.try(() => {
         .option("-e, --email <email>", "Your Teamwork login email.", TeamworkCLI.validateInput.bind(null, Teamwork.validateEmail))
         .option("-p, --password <password>", "Your Teamwork login password")
         .option("-a, --auth <auth>", "Your Teamwork authorization key.")
-        .option("-i, --installation <installation>", "Your Teamwork installation address.", Teamwork.normalizeInstallationURL)
+        .option("-i, --installation <installation>", "Your Teamwork installation address.", Teamwork.parseInstallation)
         .parse(process.argv);
-
-    console.log(TeamworkCLI.config)
 
     var details = {};
 
@@ -39,22 +36,22 @@ Promise.try(() => {
             // Find installations associated with the account
             // and ask which one they want to pick
             return TeamworkAPI.getAccounts(answers.email, answers.password);
-        }).then((accounts) => {
-            if(program.installation) return program.installation;
+        }).then((installations) => {
+
             // Ask them to pick their installation
-            else return TeamworkCLI.prompt({
+            return TeamworkCLI.prompt({
                 type: "list",
                 name: "installation",
                 message: "Installation",
-                choices: accounts.map((account) => {
+                choices: installations.map((installation) => {
                     return {
-                        name: `${account.companyName} (${account.installationUrl})`,
-                        value: account
+                        name: installation.toListItem(),
+                        value: installation
                     }
                 })
             });
         }).then((answers) => {
-            var installation = answers.installation.installationUrl;
+            var installation = answers.installation;
 
             // Login to the API
             debug("Logging in from prompt: %s, %s", details.email, installation);
@@ -66,7 +63,7 @@ Promise.try(() => {
 
         if(program.auth) {
             // If were passed an Auth key, login with the auth key
-            debug("Logging in from passed auth key: %s, %s", program.auth, program.installation);
+            debug("Logging in from passed auth key: %s, %s", program.auth, program.installation.domain);
             return TeamworkAPI.loginWithAuth(program.auth, program.installation);
         } else if(program.email && program.password) {
             // Login with passed details
@@ -82,7 +79,8 @@ Promise.try(() => {
         // Save the profile
         return TeamworkCLI.set({
             user: profile,
-            api: api.toJSON()
+            api: api.toJSON(),
+            installation: api.installation
         });
     });
 }).then(() => {

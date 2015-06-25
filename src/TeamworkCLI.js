@@ -5,7 +5,16 @@ import inquirer from "inquirer";
 import chalk from "chalk";
 import rc from "rc";
 import Teamwork from "./Teamwork";
+import TeamworkAPI from "./TeamworkAPI";
 import { Debug } from "./library/Debug";
+
+import Project from "./model/Project";
+import Installation from "./model/Installation";
+import Person from "./model/Person";
+import Tasklist from "./model/Tasklist";
+import Task from "./model/Task";
+
+// TODO: Remove TeamworkCLI dependency from any model
 
 /**
  * The prefix before the "rc" files. e.g. .teamworkrc
@@ -36,7 +45,7 @@ export default class TeamworkCLI {
      * @param  {...*} logs Anything to pass to console.log.
      */
     static log(...logs) {
-        logs.unshift(chalk.blue("tw"));
+        // logs.unshift(chalk.blue("tw"));
         console.log.apply(console, logs);
     }
 
@@ -115,7 +124,7 @@ export default class TeamworkCLI {
     static writeConfig(config) {
         // TODO: Write config file to custom location
         return new Promise((resolve, reject) => {
-            var configPath = Path.resolve(process.env.HOME, `.${TEAMWORK_RC_PREFIX}rc`);
+            var configPath = TeamworkCLI.getConfigPath();
             fs.writeFile(configPath, JSON.stringify(config), function(err) {
                 if(err) reject(err);
                 else {
@@ -132,13 +141,74 @@ export default class TeamworkCLI {
      * @return {Promise}
      */
     static getAPI() {
-        Promise.try(() => {
+        return Promise.try(() => {
             var config = TeamworkCLI.config;
 
-            if(!config.api) throw new CLIError("Not logged in. Please login again.");
+            if(!config.api) throw new CLIError("Not logged in. Please login.");
 
             return new TeamworkAPI(config.api.auth, config.api.installation);
         });
+    }
+
+    /**
+     * Choose the current X.
+     * @param  {Boolean} list    Show as list. (Does not allow you to choose)
+     * @param  {String} message The message to show in the prompt.
+     * @param  {String} type    The name of list.
+     * @param  {Array} items   Array of objects that have a `toListItem` implemented.
+     * @return {Promise}         
+     */
+    static chooseCurrentItem(list, message, type, items) {
+        if(!list) {
+            return TeamworkCLI.prompt([{
+                type: "list",
+                message: message,
+                name: type,
+                choices: items.map((item) => {
+                    return {
+                        name: item.toListItem(),
+                        value: item
+                    }
+                })
+            }]).then((answers) => {
+                TeamworkCLI.set(answers);
+            })
+        } else {
+            return Promise.try(() => {
+                items.forEach((item) => {
+                    TeamworkCLI.log(item.toListItem());
+                });
+            });
+        }
+    }
+
+    /**
+     * Get the path to the user config file.
+     * @return {String} /path/to/.teamworkrc
+     */
+    static getConfigPath() {
+        return Path.resolve(process.env.HOME, `.${TEAMWORK_RC_PREFIX}rc`);
+    }
+
+    /**
+     * Get the current project.
+     * @param {String} model The name of the model.
+     * @return {Model}
+     */
+    static getCurrent(model) {
+        var data = TeamworkCLI.config[model];
+
+        debug("Getting current %s: %j", model, data);
+
+        if(data) {
+            switch(model) {
+                case "project": return new Project(data); break;
+                case "installation": return new Installation(data); break;
+                case "user": return new Person(data); break;
+                case "tasklist": return new Tasklist(data); break;
+                case "task": return new Task(data); break;
+            }
+        }
     }
 }
 

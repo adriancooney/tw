@@ -1,0 +1,80 @@
+#!/usr/bin/env babel-node --
+
+import program from "commander";
+import Promise from "bluebird";
+import moment from "moment";
+import Teamwork from "../src/Teamwork";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
+import { Debug } from "../src/library/Debug";
+
+const debug = Debug("teamwork:cmd:log");
+
+program
+    .arguments("<task> <timestamp>")
+    .option("-m, --message <message>", "Log time with a message")
+    .option("-d, --duration <duration>", "The duration of the log.")
+    .option("-t, --time <time>", "The time the log happened.")
+    .option("--date <date>", "The date of the time log.")
+    .option("--silent", "Don't prompt for a log message")
+    .parse(process.argv);
+
+TeamworkCLI.getAPI().then((api) => {
+    var task, timestamp;
+    return Promise.try(() => {
+        // TODO: Handle when no arguments are passed.
+        // Get the task ID
+        try {
+            task = Teamwork.parseTask(program.args[0]);
+        } catch(err) {
+            debug("Invalid task %s, checking if timestamp.");
+        }
+
+        if(task) {
+            // We have a task ID, let's get it. Supplied tasks
+            // always have precedence over the current task.
+            return api.getTaskByID(task).catch((err) => {
+                if(err.code === 404) {
+                    TeamworkCLI.fail(`Task #${task} not found.`);
+                }
+            });
+        } else {
+            task = TeamworkCLI.getCurrent("task")
+
+            if(!task) throw new CLIError("No specified or current task.");
+            else return task;
+        }
+    }).then((_task) => {
+        // I hate this bootlegging in promises so much.
+        task = _task;
+
+        // We have out task, now let's parse out timestamp.
+        timestamp = program.args[1] || program.args[0];
+
+        if(!timestamp) throw new CLIError("Please supply a task or timestamp to log.");
+
+        // Parse the timestamp
+        timestamp = Teamwork.parseTimestamp(timestamp);
+
+        TeamworkCLI.log(`Logging ${timestamp.humanize()} to #${task.id}.`);
+    }).then(() => {
+        // Get the message for the timelog
+        if(program.silent) return null;
+        else if(program.message) return { message: program.message };
+        else {
+            return TeamworkCLI.prompt({
+                type: "input",
+                name: "message",
+                message: "Message"
+            });
+        }
+    }).then((answers) => {
+        var user = TeamworkCLI.getCurrent("user");
+
+        // Actually log the time with the API
+        // Take a minute to realize the beauty that is the
+        // moment API.
+        return api.log(task, user, timestamp, moment().subtract(timestamp), answers.message);
+    });
+}).catch(TeamworkCLI.fail);
+

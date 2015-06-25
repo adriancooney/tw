@@ -5,7 +5,7 @@ import debug from "debug";
 exports.Debug = debug;
 
 // To turn off logs, comment out the below line
-debug.enable("*");
+// debug.enable("*");
 
 // Enable request's debug mode
 // request.debug = true;

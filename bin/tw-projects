@@ -2,9 +2,7 @@
 
 import program from "commander";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
-import Teamwork from "../src/Teamwork";
 import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
-import { Debug } from "../src/library/Debug";
 
 program
     .option("-l, --list", "Display projects as a static list.")
@@ -13,25 +11,7 @@ program
 TeamworkCLI.getAPI().then((api) => {
     return api.getProjects();
 }).then((projects) => {
-    if(!program.list) {
-        return TeamworkCLI.prompt([{
-            type: "list",
-            message: "Projects",
-            name: "project",
-            choices: projects.map((project) => {
-                return {
-                    name: project.toListItem(),
-                    value: project
-                }
-            })
-        }]).then((answers) => {
-            TeamworkCLI.set("project", answers.project);
-        }).then(() => {
-            TeamworkCLI.log("Current project changed.");
-        });
-    } else {
-        projects.forEach((project) => {
-            TeamworkCLI.log(project.toListItem());
-        });
-    }
+    return TeamworkCLI.chooseCurrentItem(program.list, "Projects", "project", projects);
+}).then(() => {
+    TeamworkCLI.log("Current project updated.");
 }).catch(TeamworkCLI.fail);

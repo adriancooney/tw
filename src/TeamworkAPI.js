@@ -7,7 +7,13 @@ import { Debug } from "./library/Debug"
 import Teamwork from "./Teamwork";
 
 import Person from "./model/Person";
-import Person from "./model/Project";
+import Project from "./model/Project";
+import Tasklist from "./model/Tasklist";
+import Task from "./model/Task";
+import Installation from "./model/Installation";
+import Log from "./model/Log";
+
+// TODO: Account for empty results (where array expected)
 
 const debug = Debug("teamwork:api");
 
@@ -27,7 +33,7 @@ export default class TeamworkAPI {
      */
     static request(method, url, data, { headers } = {}) {
         debug("%s %s %j", method, url, data);
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             request({
                 url, method,
                 json: true,
@@ -36,8 +42,8 @@ export default class TeamworkAPI {
             }, (err, response, body) => {
                 if(err) throw err;
                 else {
-                    if(response.statusCode === 200) resolve({ body, response });
-                    else throw new HTTPError(response.statusCode);
+                    if(response.statusCode >= 200 && response.statusCode < 300) resolve({ body, response });
+                    else reject(new HTTPError(response.statusCode));
                 }
             });
         });
@@ -48,7 +54,7 @@ export default class TeamworkAPI {
      * @return {Promise} -> {Response}
      */
     request(method, path, data) {
-        return TeamworkAPI.request(method, this.installation + path, data, { 
+        return TeamworkAPI.request(method, `http://${this.installation.domain}${path}`, data, { 
             headers: {
                 "Cookie": `tw-auth=${this.auth}`
             }
@@ -63,9 +69,7 @@ export default class TeamworkAPI {
      * @return {Promise} -> {TeamworkAPI} Authenticated Teamwork API.
      */
     static login(email, password, installation) {
-        installation = Teamwork.normalizeInstallationURL(installation);
-
-        return TeamworkAPI.request("POST", `${installation}/launchpad/v1/login.json`, { 
+        return TeamworkAPI.request("POST", `http://${installation.domain}/launchpad/v1/login.json`, { 
             username: email, // TODO: Ask projects why this is like this
             password 
         }).then(({ response }) => {
@@ -99,24 +103,15 @@ export default class TeamworkAPI {
      * Get accounts for an email and password.
      * @param  {String} email    Teamwork login email.
      * @param  {String} password Teamwork login password.
-     * @return {Promise} -> {Array}
+     * @return {Promise} -> {Array[Installations]}
      */
     static getAccounts(email, password) {
-        return TeamworkAPI.request("POST", "http://authenticate.teamwork.com/account/search.json", {
+        return TeamworkAPI.request("POST", "http://authenticate.teamwork.com/accounts/search.json", {
             email, password
-        }).then(() => {
-            return [{
-                companyName: "Digital Crew",
-                installationUrl: "http://digitalcrew.teamwork.com"
-            }, 
-            {
-                companyName: "Chat Test",
-                installationUrl: "http://chattest.teamwork.com"
-            }, 
-            {
-                companyName: "TW Test",
-                installationUrl: "http://twtest.teamwork.com"
-            }]
+        }).then(({ body }) => {
+            return body.accounts.map((account) => {
+                return new Installation(account);
+            });
         });
     }
 
@@ -135,9 +130,110 @@ export default class TeamworkAPI {
      * @return {Promise} -> {Array[Project]}
      */
     getProjects() {
-        return this.requet("GET", "/projects.json").then(({ body }) => {
+        return this.request("GET", "/projects.json").then(({ body }) => {
             return body.projects.map((project) => {
                 return new Project(project);
+            });
+        });
+    }
+
+    /**
+     * Get an array of taskslist from a project.
+     * @param  {Project} project 
+     * @return {Promise} -> {Array[Tasklist]}
+     */
+    getTasklists(project) {
+        return this.request("GET", `/projects/${project.id}/tasklists.json`).then(({ body }) => {
+            return body.tasklists.map((tasklist) => {
+                return new Tasklist(tasklist);
+            });
+        });
+    }
+
+    /**
+     * Get tasks for in a particular scope.
+     * @param  {Tasklist|Project} scope Tasklist or project.
+     * @return {Promise} -> {Array[Task]}
+     */
+    getTasks(scope) {
+        if(scope instanceof Tasklist) return this.getTasksForTasklist(scope);
+    }
+
+    /**
+     * Get a task by ID.
+     * @param  {Number} task Task ID.
+     * @return {Promise} -> {Task}
+     */
+    getTaskByID(task) {
+        return this.request("GET", `/tasks/${task}.json`).then(({ body }) => {
+            return new Task(body["todo-item"]);
+        })
+    }
+
+    /**
+     * Get tasks for a specific tasklist.
+     * @param  {Tasklist} tasklist The tasklist to get the tasks for.
+     * @return {Promise} -> {Array[Task]}
+     */
+    getTasksForTasklist(tasklist) {
+        return this.request("GET", `/tasklists/${tasklist.id}/tasks.json`).then(({ body }) => {
+            return body["todo-items"].map((task) => {
+                return new Task(task);
+            });
+        });
+    }
+
+    /**
+     * Log time to a scope (project or task).
+     * @param  {Project|Task} scope    The project or task to log time to.
+     * @param {User} user The user to log the time to.
+     * @param  {Moment.duration} duration The duration of the timelog.
+     * @param  {Moment} offset   The time when the log started.
+     * @param  {String} comment  The message to log with.
+     * @return {Promise}
+     */
+    log(scope, user, duration, offset, comment) {
+        if(scope instanceof Task) return this.logToTask(scope, user, duration, offset, comment);
+    }
+
+    /**
+     * Log time to a task.
+     * @param  {Task} task    The task to log time to.
+     * @param {User} user The user to log the time to.
+     * @param  {Moment.duration} duration The duration of the timelog.
+     * @param  {Moment} offset   The time when the log started.
+     * @param  {String} comment  The message to log with.
+     * @return {Promise}
+     */
+    logToTask(task, user, duration, offset, comment) {
+        // It's a pity moment doesn't have a good API for this
+        var minutes = duration.asMinutes(),
+            hours = Math.floor(minutes / 60);
+
+        minutes = minutes - (hours * 60);
+
+        return this.request("POST", `/tasks/${task.id}/time_entries.json`, {
+            "time-entry": {
+                description: comment || "",
+                "person-id": user.id,
+                "date": offset.format("YYYYMMDD"),
+                "time": offset.format("HH:mm"),
+                "hours": hours,
+                "minutes": minutes,
+                "isBillable": false
+            }
+        });
+    }
+
+    /**
+     * Get time logs for a task.
+     * @param  {Task} task 
+     * @return {Promise} -> {Array[Log]}
+     */
+    getLogs(task) {
+        return this.request("GET", `/todo_items/${task.id}/time_entries.json`).then(({body}) => {
+            return (body["time-entries"] || []).map((entry) => {
+                return new Log(entry);
             });
         });
     }

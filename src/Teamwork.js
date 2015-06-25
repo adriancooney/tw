@@ -1,14 +1,39 @@
-export default class Teamwork {
-    static parseTimestamp(timestamp) {
+import moment from "moment";
+import Installation from "./model/Installation";
 
+export default class Teamwork {
+    /**
+     * Parses a Teamwork timestamp.
+     * @param  {String} timestamp See spec.
+     * @return {moment.duration}
+     */
+    static parseTimestamp(timestamp) {
+        var hours = timestamp.match(/(\d+)h/),
+            minutes = timestamp.match(/(\d+)m/);
+
+        if(hours || minutes) {
+            return moment.duration({
+                minutes: minutes ? parseInt(minutes[1]) : undefined,
+                hours: hours ? parseInt(hours[1]) : undefined
+            });
+        } else throw new ParserError(`Invalid timestamp "${timestamp}".`);
     }
 
     static parsePercent(percent) {
 
     }
 
+    /**
+     * Parse a teamwork task.
+     * @param  {Task} task 
+     * @return {Number}
+     */
     static parseTask(task) {
+        var id = task.match(/#(\d+)/);
 
+        if(!id) throw new ParserError(`Invalid task "${task}".`);
+
+        return id[1];
     }
 
     /**
@@ -21,9 +46,9 @@ export default class Teamwork {
 
         if(!match) throw new ParserError(`Invalid installation URL: ${installation}`);
 
-        return {
-            installation: match[1]
-        }
+        return new Installation({
+            domain: match[1] + ".teamwork.com"
+        });
     }
 
     /**

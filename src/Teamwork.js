@@ -19,6 +19,35 @@ export default class Teamwork {
         } else throw new ParserError(`Invalid timestamp "${timestamp}".`);
     }
 
+    /**
+     * Parse a commit and return intentions.
+     * @param  {String} msg Commit msg.
+     * @return {Object}     { tasks, }
+     */
+    static parseCommit(msg) {
+        // TODO: Multiple actions of the same type in the one message
+        // Attempt to find logs
+        return [
+            // I'm not sure if this is a good way to go about it but I don't care anymore
+            { type: "log", groups: ["duration", "task"], regex: /log\s+(\d+[hm](?:\d+[hm])?)\s+to\s+#(\d+)/i },
+            { type: "close", groups: ["task"], regex: /close\s+#(\d+)/i }
+        ].reduce((intentions, matcher) => {
+            var matches = msg.match(matcher.regex);
+
+            if(matches) {
+                intentions.push({
+                    action: matcher.type,
+                    data: matcher.groups.reduce((store, group, i) => {
+                        store[group] = matches[i + 1];
+                        return store;
+                    }, {})
+                });
+            } 
+
+            return intentions;
+        }, []);
+    }
+
     static parsePercent(percent) {
 
     }

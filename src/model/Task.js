@@ -32,21 +32,30 @@ export default class Task {
 
         if(data.assigned || data["responsible-party-id"]) {
             this.assigned = new Person({
-                firstName: data.assigned.firstName || data["responsible-party-firstname"],
-                lastName: data.assigned.lastName || data["responsible-party-lastname"],
-                id: data.assigned.id || parseInt(data["responsible-party-id"]),
+                firstName: (data.assigned ? data.assigned.firstName : null) || data["responsible-party-firstname"],
+                lastName: (data.assigned ? data.assigned.lastName : null) || data["responsible-party-lastname"],
+                id: (data.assigned ? data.assigned.id : null) || parseInt(data["responsible-party-id"]),
             });
         }
     }
 
     toListItem() {
-        return `[#${this.id}] ${this.title} (${this.getProgress()})\n` +
-            `  Assigned: ${this.assigned ? this.assigned.getNameInitialed() : "Anyone"}, Priority: ${this.priority}`
+        var details = [];
+        if(this.assigned) details.push(this.assigned.getNameInitialed());
+        if(this.priority) details.push(this.priority);
+        details = details.join(", ");
+        
+        return `${this.toString()} ${details ? "[" + details + "]" : ""}`;
+
     }
 
     toItem() {
-        return `[#${this.id}] ${this.title} (${this.getProgress()})\n` +
+        return `${this.toString()}\n` +
             `Assigned: ${this.assigned ? this.assigned.getNameInitialed() : "Anyone"}, Priority: ${this.priority}`
+    }
+
+    toString() {
+        return `[#${this.id}] ${this.title} (${this.getProgress()})`
     }
 
     getProgress() {

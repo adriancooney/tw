@@ -172,7 +172,7 @@ export default class TeamworkCLI {
                 })
             }]).then((answers) => {
                 TeamworkCLI.set(answers);
-            })
+            });
         } else {
             return Promise.try(() => {
                 items.forEach((item) => {

@@ -22,6 +22,6 @@ export default class Project {
     }
 
     toListItem() {
-        return `[#${this.id}] ${this.name} ${ this.description ? "- " + this.description : ""}`;
+        return `[#${this.id}] ${this.name}`;
     }
 }

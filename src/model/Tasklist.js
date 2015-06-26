@@ -12,6 +12,6 @@ export default class Tasklist {
     }    
 
     toListItem() {
-        return `[#${this.id}] ${this.name}\n  ${this.description ? this.description : "No description"}`;
+        return `[#${this.id}] ${this.name}`;
     }
 }

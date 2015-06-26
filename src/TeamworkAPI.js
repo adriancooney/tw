@@ -167,6 +167,9 @@ export default class TeamworkAPI {
     getTaskByID(task) {
         return this.request("GET", `/tasks/${task}.json`).then(({ body }) => {
             return new Task(body["todo-item"]);
+        }).catch(HTTPError, (err) => {
+            if(err.code === 404) throw new NotFoundError(`Task #${task} not found.`);
+            else throw err; // Not ours to handle
         })
     }
 
@@ -258,6 +261,13 @@ export class HTTPError extends Error {
         this.message = `HTTP Error ${code}: ${message || statusMessage}`
         this.code = this.statusCode = code;
         this.statusMessage = statusMessage;
+    }
+}
+
+export class NotFoundError extends HTTPError {
+    constructor(reason) {
+        super(404);
+        this.message = reason;
     }
 }
 

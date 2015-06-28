@@ -1,17 +1,20 @@
+import Model from "../library/Model";
 import Company from "./Company";
 
-export default class Installation {
+export default class Installation extends Model {
     constructor(data) {
-        this.domain = data.domain;
-        this.url = data.url;
-        this.projectsEnabled = data.projectsEnabled;
-        this.chatEnabled = data.chatEnabled;
-        this.deskEnabled = data.deskEnabled;
-        this.name = data.name;
-        this.company = new Company(data);
+        super({
+            domain: true,
+            name: false,
+            url: false,
+            projectsEnabled: false,
+            chatEnabled: false,
+            deskEnabled: false,
+            company: Company
+        }, data);
     }
 
-    toListItem() {
-        return `${this.name} (${this.domain})`;
+    toString() {
+        return this.name ? `${this.name} (${this.domain})` : this.domain;
     }
 }

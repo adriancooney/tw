@@ -1,64 +1,139 @@
+import moment from "moment";
+import Model from "../library/Model";
+import Tag from "./Tag";
 import Person from "./Person";
+import Company from "./Company";
 import Project from "./Project";
 import Tasklist from "./Tasklist";
 
-export default class Task {
+export default class Task extends Model {
+    /**
+     * Create a new Task.
+     * @param  {Object} data 
+     *           {Number} :id - ID of the task.
+     *           {String} :title  
+     *           {String} :description 
+     *           {String} :status
+     *           {String} :priority 
+     *           {Number} :progress 
+     *           {Number} :parent - The ID of the parent task.
+     *           {Number} :dependencyCount
+     *           {Number} :attachmentCount
+     *           {Object} :project - See Project#constructor.
+     *           {Object} :tasklist - See Tasklist#constructor.
+     *           {Object} :author - See Person#constructor.
+     *           {Array}  :tags - Array of tags. See Tag#constructor.
+     *           {Obejct} :assigned - See Person#constructor.
+     */
     constructor(data) {
-        this.id = data.id;
-        this.title = data.title || data.content;
-        this.description = data.description;
-        this.status = data.status;
-        this.priority = data.priority;
-        this.tags = data.tags;
-        this.progress = data.progress;
-        this.parent = data.parent || parseInt(data.parentTaskId);
-        this.dependencyCount = data.dependencyCount || parseInt(data["has-dependencies"]);
-        this.attachmentCount = data.attachmentCount || parseInt(data["attachments-count"])
-        this.project = new Project({
-            id: (data.project ? data.project.id : null) || parseInt(data["company-id"]),
-            name: (data.project ? data.project.name : null) || parseInt(data["company-name"])
-        });
-
-        this.tasklist = new Tasklist({
-            id: (data.tasklist ? data.tasklist.id : null) || parseInt(data["todo-list-id"]),
-            name: (data.tasklist ? data.tasklist.name : null) || data["todo-list-name"]
-        });
-
-        this.author = new Person({
-            firstName: (data.author ? data.author.firstName : null) || data["creator-firstname"],
-            lastName: (data.author ? data.author.lastName : null) || data["creator-lastname"],
-            id: (data.author ? data.author.id : null) || parseInt(data["creator-id"])
-        });
-
-        if(data.assigned || data["responsible-party-id"]) {
-            this.assigned = new Person({
-                firstName: (data.assigned ? data.assigned.firstName : null) || data["responsible-party-firstname"],
-                lastName: (data.assigned ? data.assigned.lastName : null) || data["responsible-party-lastname"],
-                id: (data.assigned ? data.assigned.id : null) || parseInt(data["responsible-party-id"]),
-            });
-        }
+        super({
+            id: true,
+            title: true,
+            description: false,
+            status: false,
+            priority: false,
+            progress: false,
+            completed: false,
+            attachmentCount: false,
+            dependencyCount: false,
+            commentCount: false,
+            createdAt: moment,
+            lastChangedAt: moment,
+            hasUnreadComments: false,
+            hasReminders: false,
+            loggedTime: false,
+            estimatedTime: false,
+            tasklist: Tasklist,
+            project: Project,
+            company: Company,
+            author: Person,
+            tags: Tag,
+            assigned: Person
+        }, data);
     }
 
-    toListItem() {
-        var details = [];
-        if(this.assigned) details.push(this.assigned.getNameInitialed());
-        if(this.priority) details.push(this.priority);
-        details = details.join(", ");
-        
-        return `${this.toString()} ${details ? "[" + details + "]" : ""}`;
-
-    }
-
-    toItem() {
-        return `${this.toString()}\n` +
-            `Assigned: ${this.assigned ? this.assigned.getNameInitialed() : "Anyone"}, Priority: ${this.priority}`
-    }
-
-    toString() {
-        return `[#${this.id}] ${this.title} (${this.getProgress()})`
-    }
-
+    /**
+     * Return the progress string. i.e. "20%"
+     * @return {String} 
+     */
     getProgress() {
         return `${this.progress}%`
+    }
+    /**
+     * Convert to Task to a string. 
+     * @param  {Boolean} detailed Give a detailed view of the task.
+     * @return {String}
+     */
+    toString(detailed = false) {
+        var details = [];
+        details.push(this.getProgress)
+
+        if(long) {
+            if(this.assigned) details.push(this.assigned.getNameInitialed());
+            if(this.priority) details.push(this.priority);
+        }
+
+        details = details.join(", ");
+
+        var task = `[#${this.id}] ${this.title} (${details})`
+    }
+
+    /**
+     * Create a Task object from the Teamwork API.
+     * @param {Object} data Data returned from Teamwork API.
+     * @return {Task} 
+     */
+    static fromAPI(task) {
+        var data = {
+            id: task.id,
+            title: task.content,
+            description: task.description,
+            status: task.status,
+            priority: task.priority,
+            progress: task.progress,
+            completed: false,
+            attachmentCount: task['attachments-count'],
+            dependencyCount: task['has-dependencies'],
+            commentCount: task['comments-count'],
+            createdAt: task['created-on'],
+            lastChangedAt: task['last-changed-on'],
+            hasUnreadComments: task['has-unread-comments'],
+            hasReminders: task['has-reminders'],
+            loggedTime: parseInt(task.timeIsLogged),
+            estimatedTime: task['estimated-minutes'],
+            tasklist: {
+                id: task['todo-list-id'],
+                name: task['todo-list-name']
+            },
+            project: {
+                id: task['project-id'],
+                name: task['project-name']
+            },
+            company: {
+                id: task['company-id'],
+                name: task['company-name']
+            },
+            author: {
+                firstName: task['creator-firstname'],
+                lastName: task['creator-lastname'],
+                id: task['creator-id'],
+                avatar: task['creator-avatar-url']
+            },
+            tags: task.tags
+        };
+
+        if(task['responsible-party-id']) {
+            data.assigned = {
+                id: parseInt(task['responsible-party-id']),
+                firstName: task['responsible-party-firstname'],
+                lastName: task['responsible-party-lastname']
+            }
+        }
+
+        if(task['predecessors']) {
+            // TODO: Predecessors. Ask what's the difference between predecessors and dependencies.
+        }
+
+        return new Task(data);
     }
 }

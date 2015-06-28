@@ -1,37 +1,53 @@
 import moment from "moment";
+import Model from "../library/Model";
 import TeamworkCLI from "../TeamworkCLI";
 import Person from "./Person";
 import Task from "./Task";
+import Tasklist from "./Tasklist";
 import Project from "./Project";
+import Company from "./Company";
 
-export default class Log {
+export default class Log extends Model {
     constructor(data) {
-        this.minutes = parseInt(data.minutes);
-        this.hours = parseInt(data.hours);
+        super({
+            id: false,
+            minutes: true,
+            hours: true,
+            description: false,
+            date: [true, moment],
+            isBilled: false,
+            author: Person,
+            task: Task,
+            tasklist: Tasklist,
+            project: Project,
+            company: Company
+        }, data);
+
         this.duration = moment.duration(this.minutes, "m").add(moment.duration(this.hours, "h"));
-        this.description = data.description;
-        this.date = moment(data.date);
-        this.isBilled = data.isBilled;
-
-        this.author = new Person({
-            firstName: data["person-first-name"],
-            lastName: data["person-last-name"],
-            id: data["person-id"]
-        });
-
-        this.task = new Task({
-            id: parseInt(data["todo-item-id"]),
-            name: data["todo-item-name"]
-        });
-
-        // TODO: Normalize all model creations instead of using API names
-        this.project = new Project({
-            name: data["project-name"],
-            id: data["project-id"]
-        })
     }
 
-    toListItem() {
+    toString() {
         return `${TeamworkCLI.color.green(this.author.getNameInitialed())} logged ${TeamworkCLI.color.magenta(this.duration.humanize())} ${this.date.calendar()}.\n > ${this.description}` 
+    }
+
+    /**
+     * Create a log.
+     * @param  {Moment.duration} duration The duration of the timelog.
+     * @param  {Moment} offset   The time when the log started.
+     * @param  {String} comment  The message to log with.
+     * @return {Log}
+     */
+    static create(duration, offset, comment) {
+        // It's a pity moment doesn't have a good API for this
+        var minutes = duration.asMinutes(),
+            hours = Math.floor(minutes / 60);
+
+        minutes = minutes - (hours * 60);
+
+        return new Log({
+            minutes, hours,
+            date: offset,
+            description: comment
+        });
     }
 }

@@ -1,21 +1,24 @@
 import Path from "path";
 import http from "http";
+import url from "url";
+import assert from "assert";
 import Promise from "bluebird";
 import request from "request";
 import Cookie, { Jar } from "cookie-jar";
 import { Debug } from "./library/Debug"
 import Teamwork from "./Teamwork";
 
-import Person from "./model/Person";
-import Project from "./model/Project";
-import Tasklist from "./model/Tasklist";
-import Task from "./model/Task";
-import Installation from "./model/Installation";
-import Log from "./model/Log";
+import {
+    Log,
+    Task,
+    User,
+    Person,
+    Project,
+    Tasklist,
+    Installation,
+} from "./model";
 
-// TODO: Account for empty results (where array expected)
-
-const debug = Debug("teamwork:api");
+const debug = Debug("tw:api");
 
 export default class TeamworkAPI {
     /**
@@ -69,7 +72,11 @@ export default class TeamworkAPI {
      * @return {Promise} -> {TeamworkAPI} Authenticated Teamwork API.
      */
     static login(email, password, installation) {
-        return TeamworkAPI.request("POST", `http://${installation.domain}/launchpad/v1/login.json`, { 
+        // Allow passing on Installation object.
+        if(typeof installation === "string") installation = Teamwork.parseInstallation(installation);
+        else if(!(installation instanceof Installation)) throw new Error("Installation parameter must be a String or an Installation object.");
+
+        return TeamworkAPI.request("POST", `https://${installation.domain}/launchpad/v1/login.json`, { 
             username: email, // TODO: Ask projects why this is like this
             password 
         }).then(({ response }) => {
@@ -84,7 +91,7 @@ export default class TeamworkAPI {
 
                 debug("Successfully logged in Teamwork API on %s (%s).", installation, auth);
                 return new TeamworkAPI(auth, installation);   
-            } else throw new Error("Projects API did not return a tw-auth cookie. Something is very wrong. Let me get back to you on this one..");
+            } else throw new HTTPError(500, "Projects API did not return a tw-auth cookie. Something is very wrong. Let me get back to you on this one..");
         });
     }
 
@@ -95,8 +102,19 @@ export default class TeamworkAPI {
      * @return {Promise} -> {TeamworkAPI} Authenticate Teamwork API.
      */
     static loginWithAuth(auth, installation) {
-        // TODO: Test if auth key works.
-        return Promise.resolve(new TeamworkAPI(auth, installation));
+        if(typeof installation === "string") installation = Teamwork.parseInstallation(installation);
+        else if(!(installation instanceof Installation)) throw new Error("installation parameter must be a String or an Installation object.");
+
+        // Create the installation
+        var api = new TeamworkAPI(auth, installation);
+
+        // Test the auth key.
+        return api.getProfile().catch(HTTPError, (err) => {
+            throw new Error(`Unable to authorize with key "${auth}".`);
+        }).then(() => {
+            debug("Successfully logged in with auth key (%s).", auth);
+            return api;
+        });
     }
 
     /**
@@ -121,7 +139,15 @@ export default class TeamworkAPI {
      */
     getProfile() {
         return this.request("GET", "/me.json").then(({ body }) => {
-            return new Person(body.person);
+            var person = body.person;
+
+            return new Person({
+                id: parseInt(person['id']),
+                firstName: person['first-name'],
+                lastName: person['last-name'],
+                username: person['user-name'],
+                avatar: person['avatar-url']
+            });
         });
     }
 
@@ -132,7 +158,16 @@ export default class TeamworkAPI {
     getProjects() {
         return this.request("GET", "/projects.json").then(({ body }) => {
             return body.projects.map((project) => {
-                return new Project(project);
+                return new Project({
+                    id: parseInt(project.id),
+                    company: project.company,
+                    name: project.name,
+                    description: project.description,
+                    status: project.status,
+                    tags: project.tags,
+                    createdAt: project['created-on'],
+                    logo: project.logo || null
+                });
             });
         });
     }
@@ -145,7 +180,18 @@ export default class TeamworkAPI {
     getTasklists(project) {
         return this.request("GET", `/projects/${project.id}/tasklists.json`).then(({ body }) => {
             return body.tasklists.map((tasklist) => {
-                return new Tasklist(tasklist);
+                return new Tasklist({
+                    id: parseInt(tasklist.id),
+                    name: tasklist.name,
+                    description: tasklist.description,
+                    complete: tasklist.complete,
+                    private: tasklist.private,
+                    uncompletedCount: parseInt(tasklist['uncompleted-count']) || 0,
+                    project: {
+                        id: parseInt(tasklist.projectId),
+                        name: tasklist.projectName
+                    },
+                });
             });
         });
     }
@@ -157,20 +203,7 @@ export default class TeamworkAPI {
      */
     getTasks(scope) {
         if(scope instanceof Tasklist) return this.getTasksForTasklist(scope);
-    }
-
-    /**
-     * Get a task by ID.
-     * @param  {Number} task Task ID.
-     * @return {Promise} -> {Task}
-     */
-    getTaskByID(task) {
-        return this.request("GET", `/tasks/${task}.json`).then(({ body }) => {
-            return new Task(body["todo-item"]);
-        }).catch(HTTPError, (err) => {
-            if(err.code === 404) throw new NotFoundError(`Task #${task} not found.`);
-            else throw err; // Not ours to handle
-        })
+        else if(scope instanceof Project) return this.getTasksForProject(scope);
     }
 
     /**
@@ -181,7 +214,62 @@ export default class TeamworkAPI {
     getTasksForTasklist(tasklist) {
         return this.request("GET", `/tasklists/${tasklist.id}/tasks.json`).then(({ body }) => {
             return body["todo-items"].map((task) => {
-                return new Task(task);
+                return Task.fromAPI(task);
+            });
+        });
+    }
+
+    /**
+     * Get a task by ID.
+     * @param  {Number} task Task ID.
+     * @return {Promise} -> {Task}
+     */
+    getTaskByID(task) {
+        return this.request("GET", `/tasks/${task}.json`).then(({ body }) => {
+            return Task.fromAPI(body["todo-item"]);
+        }).catch(HTTPError, (err) => {
+            if(err.code === 404) throw new NotFoundError(`Task #${task} not found.`);
+            else throw err; // Not ours to handle
+        })
+    }
+
+    /**
+     * Get time logs for a task.
+     * @param  {Task} task 
+     * @return {Promise} -> {Array[Log]}
+     */
+    getLogs(task) {
+        return this.request("GET", `/todo_items/${task.id}/time_entries.json`).then(({ body }) => {
+            return (body["time-entries"] || []).map((entry) => {
+                return new Log({
+                    id: parseInt(entry.id),
+                    description: entry.description,
+                    date: entry.date,
+                    isBilled: !!parseInt(entry.isBillable),
+                    minutes: parseInt(entry.minutes),
+                    hours: parseInt(entry.hours),
+                    author: {
+                        id: parseInt(entry["person-id"]),
+                        firstName: entry["person-first-name"],
+                        lastName: entry["person-last-name"],
+                    },
+                    project: {
+                        id: parseInt(entry["project-id"]),
+                        name: entry["project-name"]
+                    },
+                    tasklist: {
+                        id: parseInt(entry["todo-list-id"]),
+                        name: entry["todo-list-name"]
+                    },
+                    task: {
+                        id: parseInt(entry["todo-item-id"]),
+                        title: entry["todo-item-name"]
+                    },
+                    company: {
+                        id: entry["company-id"],
+                        name: entry["company-name"]
+                    }
+                });
             });
         });
     }
@@ -190,13 +278,11 @@ export default class TeamworkAPI {
      * Log time to a scope (project or task).
      * @param  {Project|Task} scope    The project or task to log time to.
      * @param {User} user The user to log the time to.
-     * @param  {Moment.duration} duration The duration of the timelog.
-     * @param  {Moment} offset   The time when the log started.
-     * @param  {String} comment  The message to log with.
      * @return {Promise}
      */
-    log(scope, user, duration, offset, comment) {
-        if(scope instanceof Task) return this.logToTask(scope, user, duration, offset, comment);
+    log(scope, user, log) {
+        if(scope instanceof Task) return this.logToTask(scope, user, log);
+        else if(scope instanceof Project) return this.logToProject(scope, user, log);
     }
 
     /**
@@ -208,36 +294,21 @@ export default class TeamworkAPI {
      * @param  {String} comment  The message to log with.
      * @return {Promise}
      */
-    logToTask(task, user, duration, offset, comment) {
-        // It's a pity moment doesn't have a good API for this
-        var minutes = duration.asMinutes(),
-            hours = Math.floor(minutes / 60);
-
-        minutes = minutes - (hours * 60);
-
+    logToTask(task, user, log) {
         return this.request("POST", `/tasks/${task.id}/time_entries.json`, {
             "time-entry": {
-                description: comment || "",
+                description: log.description,
                 "person-id": user.id,
-                "date": offset.format("YYYYMMDD"),
-                "time": offset.format("HH:mm"),
-                "hours": hours,
-                "minutes": minutes,
-                "isBillable": false
+                "date": log.date.format("YYYYMMDD"),
+                "time": log.date.format("HH:mm"),
+                "hours": log.hours,
+                "minutes": log.minutes,
+                "isBillable": log.isBilled
             }
-        });
-    }
+        }).then(({ body }) => {
+            log.id = parseInt(body.timeLogId);
 
-    /**
-     * Get time logs for a task.
-     * @param  {Task} task 
-     * @return {Promise} -> {Array[Log]}
-     */
-    getLogs(task) {
-        return this.request("GET", `/todo_items/${task.id}/time_entries.json`).then(({body}) => {
-            return (body["time-entries"] || []).map((entry) => {
-                return new Log(entry);
-            });
+            return log;
         });
     }
 
@@ -268,12 +339,5 @@ export class NotFoundError extends HTTPError {
     constructor(reason) {
         super(404);
         this.message = reason;
-    }
-}
-
-export class LoginError extends HTTPError {
-    constructor(email) { 
-        super(401); 
-        this.message = `Login failed: Invalid credentials. (${email})`;
     }
 }

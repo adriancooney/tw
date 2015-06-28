@@ -7,7 +7,8 @@
     "tw": "bin/tw"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "build": "cd bin && ../node_modules/.bin/babel ./* -d ../build && chmod +x ../build/*"
   },
   "keywords": [
     "tw"
@@ -22,9 +23,7 @@
     "rc": "^1.0.3"
   },
   "dependencies": {
-    "babel": "^5.6.7",
     "bluebird": "^2.9.30",
-    "cookie-jar": "^0.3.0",
     "debug": "^2.2.0",
     "moment": "^2.10.3",
     "request": "^2.58.0"

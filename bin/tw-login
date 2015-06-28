@@ -7,7 +7,7 @@ import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
 import { Debug } from "../src/library/Debug";
 
-const debug = Debug("teamwork:cmd:login");
+const debug = Debug("tw:cmd:login");
 
 Promise.try(() => {
     program

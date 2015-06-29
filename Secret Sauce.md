@@ -10,6 +10,8 @@ The Teamwork is a simple command line interface to Teamwork Projects.
 ```sh
 tw - A Teamwork Projects CLI interface.
 
+    create <task|tasklist|project>
+
     status                      View the current state of the tool. To update the state use the following:
     projects|tasklists|tasks    View and select the current project, tasklist or task.
       --list                    Display as a static list. (Non interactive)
@@ -19,6 +21,8 @@ tw - A Teamwork Projects CLI interface.
     open <task>                 Open or reopen a task.
     close <task>                Close a task. Omit <task> to close the current task.
         --force                 Don't ask to confirm.
+
+    mv                          Move a task or tasklist to another tasklist or project.
 
     comments <task>             View the comments on a task. Omitting <task> gets comment on current task.
         --list                  Display a static list of comments. Omitting <task> gets comment on current task.

@@ -22,7 +22,7 @@ import Task from "./model/Task";
  */
 const TEAMWORK_RC_PREFIX = "teamwork";
 
-const debug = Debug("teamwork:cli");
+const debug = Debug("tw:cli");
 
 export default class TeamworkCLI {
     /**

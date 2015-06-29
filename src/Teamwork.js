@@ -3,11 +3,11 @@ import Installation from "./model/Installation";
 
 export default class Teamwork {
     /**
-     * Parses a Teamwork timestamp.
-     * @param  {String} timestamp See spec.
+     * Parses a Teamwork duration.
+     * @param  {String} duration See spec.
      * @return {moment.duration}
      */
-    static parseTimestamp(timestamp) {
+    static parseDuration(duration) {
         var hours = timestamp.match(/(\d+)h/),
             minutes = timestamp.match(/(\d+)m/);
 
@@ -16,7 +16,7 @@ export default class Teamwork {
                 minutes: minutes ? parseInt(minutes[1]) : undefined,
                 hours: hours ? parseInt(hours[1]) : undefined
             });
-        } else throw new ParserError(`Invalid timestamp "${timestamp}".`);
+        } else throw new ParserError(`Invalid duration "${timestamp}".`);
     }
 
     /**
@@ -55,7 +55,7 @@ export default class Teamwork {
     /**
      * Parse a teamwork task.
      * @param  {Task} task 
-     * @return {Number}
+     * @return {Number} Task id.
      */
     static parseTask(task) {
         var id = task.match(/#(\d+)/);

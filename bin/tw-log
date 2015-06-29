@@ -10,64 +10,67 @@ import { Debug } from "../src/library/Debug";
 
 const debug = Debug("tw:cmd:log");
 
-program
-    .arguments("<task> <timestamp>")
-    .option("-m, --message <message>", "Log time with a message")
-    .option("-d, --duration <duration>", "The duration of the log.")
-    .option("-t, --time <time>", "The time the log happened.")
-    .option("--date <date>", "The date of the time log.")
-    .option("--silent", "Don't prompt for a log message")
-    .parse(process.argv);
+Promise.try(() => {
+    program
+        .arguments("[task] <duration>")
+        .option("-m, --message <message>", "Log time with a message")
+        .option("-d, --duration <duration>", "The duration of the log.")
+        .option("-t, --time <time>", "The time the log happened.")
+        .option("--date <date>", "The date of the time log.")
+        .option("--silent", "Don't prompt for a log message")
+        .parse(process.argv);
 
-TeamworkCLI.getAPI().then((api) => {
-    var task, timestamp;
-    return Promise.try(() => {
-        // TODO: Handle when no arguments are passed.
-        // Get the task ID
-        try {
-            task = Teamwork.parseTask(program.args[0]);
-        } catch(err) {
-            debug("Invalid task %s, checking if timestamp.");
-        }
+    // Ensure we have *at least* a duration
+    if(program.args.length === 0) throw new CLIError(`Please provide a ${TeamworkCLI.color.blue("<duration>")}.`);
 
-        if(task) {
-            // We have a task ID, let's get it. Supplied tasks
-            // always have precedence over the current task.
-            return api.getTaskByID(task);
-        } else {
-            task = TeamworkCLI.getCurrent("task")
+    return TeamworkCLI.getAPI();
+}).then((api) => {
+    var task;
 
-            if(!task) throw new CLIError("No specified or current task.");
-            else return task;
-        }
-    }).then((task) => {
-        // We have out task, now let's parse out timestamp.
-        timestamp = program.args[1] || program.args[0];
+    // Get the task ID
+    try {
+        task = Teamwork.parseTask(program.args[0]);
+    } catch(err) {
+        debug("Invalid task %s, checking if duration.", program.args[0]);
+    }
 
-        if(!timestamp) throw new CLIError("Please supply a task or timestamp to log.");
+    if(task) {
+        // We have a task ID, let's get it. Supplied tasks
+        // always have precedence over the current task.
+        return [api, api.getTaskByID(task)];
+    } else {
+        task = TeamworkCLI.getCurrent("task")
 
-        // Parse the timestamp
-        timestamp = Teamwork.parseTimestamp(timestamp);
+        if(!task) throw new CLIError(`Please specify a task or select your current task with ${TeamworkCLI.color.blue("tw tasks")}.`);
+        else return [api, task];
+    }
+}).spread((api, task) => {
+    // We have out task, now let's parse out duration.
+    duration = program.args[1] || program.args[0];
 
-        TeamworkCLI.log(`Logging ${timestamp.humanize()} to #${task.id}.`);
+    if(!duration) throw new CLIError("Please supply a task or duration to log.");
 
-        return { task, timestamp }
-    }).then(({ task, timestamp }) => {
-        var data = [task, timestamp];
+    // Parse the duration
+    duration = Teamwork.parseDuration(duration);
 
-        // Get the message for the timelog
-        if(program.message) data.push({ message: program.message })
-        else data.push(TeamworkCLI.prompt({
-            type: "input",
-            name: "message",
-            message: "Message"
-        }));
-    }).spread((task, timestamp, answers) => {
-        var user = TeamworkCLI.getCurrent("user");
+    TeamworkCLI.log(`Logging ${duration.humanize()} to #${task.id}.`);
 
-        // Actually log the time with the API
-        // Take a minute to realize the beauty that is the Moment API.
-        return api.log(task, user, timestamp, moment().subtract(timestamp), answers.message);
-    });
+    return [api, task, duration];
+}).spread((api, task, duration) => {
+    var data = [api, task, duration];
+
+    // Get the message for the timelog
+    if(program.message) data.push({ message: program.message })
+    else data.push(TeamworkCLI.prompt({
+        type: "input",
+        name: "message",
+        message: "Message"
+    }));
+}).spread((api, task, duration, answers) => {
+    var user = TeamworkCLI.getCurrent("user");
+
+    // Actually log the time with the API
+    // Take a minute to realize the beauty that is the Moment API.
+    return api.log(task, user, duration, moment().subtract(duration), answers.message);
 }).catch(TeamworkCLI.fail);
 

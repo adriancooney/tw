@@ -45,7 +45,7 @@ Promise.try(() => {
                 message: "Installation",
                 choices: installations.map((installation) => {
                     return {
-                        name: installation.toListItem(),
+                        name: installation.toString(),
                         value: installation
                     }
                 })

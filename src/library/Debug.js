@@ -4,6 +4,8 @@ import debug from "debug";
 // Weird Babel bug, won't translate `export debug` to this.
 exports.Debug = debug;
 
+const DEBUG = true;
+
 // To turn off logs, comment out the below line
 // debug.enable("*");
 

@@ -6,9 +6,11 @@
   "bin": {
     "tw": "./bin/tw"
   },
+  "files": ["build"],
   "scripts": {
-    "test": "mocha",
-    "build": "cd src/ && ../node_modules/.bin/babel ./cmd/* -d ../build && chmod +x ../build/*"
+    "test": "mocha --compilers js:babel/register",
+    "bin-tool": "sed -i.bak s/babel-node\\ --/node/g ./build/bin/* && rm build/bin/*.bak && rename build/bin/*.js --delete=\".js\" && chmod +x build/bin/* && cp ./package.json build/package.json",
+    "build": "mkdir -p ./build/bin && ./node_modules/.bin/babel ./bin/* -d ./build && mkdir build/src && ./node_modules/.bin/babel ./src -d ./build/src && npm run bin-tool"
   },
   "keywords": [
     "tw"
@@ -16,6 +18,7 @@
   "author": "Adrian Cooney <adrian.cooney@teamwork.com>",
   "license": "MIT",
   "devDependencies": {
+    "babel": "^5.6.14",
     "chalk": "^1.0.0",
     "commander": "^2.8.1",
     "inquirer": "^0.8.5",

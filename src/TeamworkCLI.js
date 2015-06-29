@@ -22,7 +22,14 @@ import Task from "./model/Task";
  */
 const TEAMWORK_RC_PREFIX = "teamwork";
 
+/**
+ * The frames of the loaders.
+ * @type {Array}
+ */
+const LOADER = ["|", "/", "-", "\\", "|", "/", "-", "\\"];
+
 const debug = Debug("tw:cli");
+
 
 export default class TeamworkCLI {
     /**
@@ -146,7 +153,19 @@ export default class TeamworkCLI {
 
             if(!config.api) throw new CLIError("Not logged in. Please login.");
 
-            return new TeamworkAPI(config.api.auth, config.api.installation);
+            var api = new TeamworkAPI(config.api.auth, config.api.installation);
+
+            // Overwrite the request method so that
+            // we can set the loading state of the CLI
+            var self = this, request = api.request;
+            api.request = function() {
+                self.loading(true);
+                return request.apply(this, arguments).finally(() => {
+                    self.loading(false);
+                });
+            };
+
+            return api;
         });
     }
 
@@ -166,7 +185,7 @@ export default class TeamworkCLI {
                 name: type,
                 choices: items.map((item) => {
                     return {
-                        name: item.toListItem(),
+                        name: item.toString(),
                         value: item
                     }
                 })
@@ -208,6 +227,33 @@ export default class TeamworkCLI {
                 case "tasklist": return new Tasklist(data); break;
                 case "task": return new Task(data); break;
             }
+        }
+    }
+
+    /**
+     * Display or hide a loading indicator.
+     * @param  {Boolean} isLoading Whether or not to display or hide the indicator.
+     */
+    static loading(isLoading) {
+        if(!this.isLoading) {
+            TeamworkCLI.isLoading = isLoading;
+
+            // Show the loading bar
+            TeamworkCLI.ui = new inquirer.ui.BottomBar();
+            TeamworkCLI.loaderFrame = 0;
+
+            (function tick() {
+                TeamworkCLI.ui.updateBottomBar(LOADER[TeamworkCLI.loaderFrame]);
+                TeamworkCLI.loaderFrame = TeamworkCLI.loaderFrame < (LOADER.length - 1) ? TeamworkCLI.loaderFrame + 1 : 0;
+                TeamworkCLI.loaderAnimation = setTimeout(tick, 200);
+            })();
+        } else if(this.isLoading) {
+            TeamworkCLI.isLoading = isLoading;
+
+            clearTimeout(TeamworkCLI.loaderAnimation);
+            TeamworkCLI.ui.updateBottomBar("");
+            TeamworkCLI.ui.close();
+            TeamworkCLI.ui = null;
         }
     }
 }

@@ -4,11 +4,11 @@
   "description": "Teamwork Projects CLI and git integration.",
   "main": "index.js",
   "bin": {
-    "tw": "bin/tw"
+    "tw": "./bin/tw"
   },
   "scripts": {
     "test": "mocha",
-    "build": "cd bin && ../node_modules/.bin/babel ./* -d ../build && chmod +x ../build/*"
+    "build": "cd src/ && ../node_modules/.bin/babel ./cmd/* -d ../build && chmod +x ../build/*"
   },
   "keywords": [
     "tw"

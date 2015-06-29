@@ -40,10 +40,7 @@ TeamworkCLI.getAPI().then((api) => {
             if(!task) throw new CLIError("No specified or current task.");
             else return task;
         }
-    }).then((_task) => {
-        // I hate this bootlegging in promises so much.
-        task = _task;
-
+    }).then((task) => {
         // We have out task, now let's parse out timestamp.
         timestamp = program.args[1] || program.args[0];
 
@@ -53,23 +50,23 @@ TeamworkCLI.getAPI().then((api) => {
         timestamp = Teamwork.parseTimestamp(timestamp);
 
         TeamworkCLI.log(`Logging ${timestamp.humanize()} to #${task.id}.`);
-    }).then(() => {
+
+        return { task, timestamp }
+    }).then(({ task, timestamp }) => {
+        var data = [task, timestamp];
+
         // Get the message for the timelog
-        if(program.silent) return null;
-        else if(program.message) return { message: program.message };
-        else {
-            return TeamworkCLI.prompt({
-                type: "input",
-                name: "message",
-                message: "Message"
-            });
-        }
-    }).then((answers) => {
+        if(program.message) data.push({ message: program.message })
+        else data.push(TeamworkCLI.prompt({
+            type: "input",
+            name: "message",
+            message: "Message"
+        }));
+    }).spread((task, timestamp, answers) => {
         var user = TeamworkCLI.getCurrent("user");
 
         // Actually log the time with the API
-        // Take a minute to realize the beauty that is the
-        // moment API.
+        // Take a minute to realize the beauty that is the Moment API.
         return api.log(task, user, timestamp, moment().subtract(timestamp), answers.message);
     });
 }).catch(TeamworkCLI.fail);

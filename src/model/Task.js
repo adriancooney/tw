@@ -64,18 +64,18 @@ export default class Task extends Model {
      * @param  {Boolean} detailed Give a detailed view of the task.
      * @return {String}
      */
-    toString(detailed = false) {
+    toString(detailed = true) {
         var details = [];
-        details.push(this.getProgress)
+        details.push(this.getProgress())
 
-        if(long) {
+        if(detailed) {
             if(this.assigned) details.push(this.assigned.getNameInitialed());
             if(this.priority) details.push(this.priority);
         }
 
         details = details.join(", ");
 
-        var task = `[#${this.id}] ${this.title} (${details})`
+        return `[#${this.id}] ${this.title} (${details})`
     }
 
     /**

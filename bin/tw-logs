@@ -8,7 +8,7 @@ import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
 import { Debug } from "../src/library/Debug";
 
-const debug = Debug("teamwork:cmd:log");
+const debug = Debug("tw:cmd:log");
 
 program
     .arguments("<task> <timestamp>")
@@ -29,11 +29,7 @@ TeamworkCLI.getAPI().then((api) => {
 
             // We have a task ID, let's get it. Supplied tasks
             // always have precedence over the current task.
-            return api.getTaskByID(task).catch((err) => {
-                if(err.code === 404) {
-                    TeamworkCLI.fail(`Task #${task} not found.`);
-                }
-            });
+            return api.getTaskByID(task);
         } else {
             task = TeamworkCLI.getCurrent("task")
 
@@ -41,12 +37,12 @@ TeamworkCLI.getAPI().then((api) => {
             else return task;
         }
     }).then((task) => {
-        TeamworkCLI.log(task.toItem());
+        TeamworkCLI.log(task.toString());
         return api.getLogs(task);
     }).then((logs) => {
         if(logs.length) {
             logs.forEach((log, i) => {
-                TeamworkCLI.log(`#${i + 1} ` + log.toListItem());
+                TeamworkCLI.log(`#${i + 1} ` + log.toString());
             });
         } else {
             TeamworkCLI.log(TeamworkCLI.color.red("No time logged."));

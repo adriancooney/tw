@@ -7,7 +7,7 @@ import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
 import { Debug } from "../src/library/Debug";
 
-const debug = Debug("teamwork:cmd:login");
+const debug = Debug("tw:cmd:login");
 
 Promise.try(() => {
     program
@@ -35,8 +35,9 @@ Promise.try(() => {
 
             // Find installations associated with the account
             // and ask which one they want to pick
-            return TeamworkAPI.getAccounts(answers.email, answers.password);
+            return TeamworkAPI.getAccounts(answers.email.trim(), answers.password.trim());
         }).then((installations) => {
+            if(!installations.length) throw new CLIError("No accounts found.");
 
             // Ask them to pick their installation
             return TeamworkCLI.prompt({
@@ -45,7 +46,7 @@ Promise.try(() => {
                 message: "Installation",
                 choices: installations.map((installation) => {
                     return {
-                        name: installation.toListItem(),
+                        name: installation.toCLIString(),
                         value: installation
                     }
                 })

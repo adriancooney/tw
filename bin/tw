@@ -1,7 +1,5 @@
 #!/usr/bin/env babel-node --
 
-// TODO: Babelify executables somehow.
-
 import program from "commander";
 import config from "../package.json";
 
@@ -9,14 +7,17 @@ import config from "../package.json";
 
 program
     .version(config.version)
-    .command("status", "Show the current Teamwork status.")
+    .command("status", "View current task, tasklist and project.")
     .command("projects", "View and select a project.")
-    .command("tasklists", "View and select a tasklist from the current project.")
-    .command("tasks", "View and select a task from the current tasklist.")
-    .command("log <task> <timestamp>", "Log time to teamwork.")
-    .command("logs <task>", "Get the time logs for a task.")
+    .command("tasklists [project]", "View and select a tasklist from the current project.")
+    .command("tasks [tasklist]", "View and select a task from the current tasklist.")
+    .command("task <tasklist>", "Select a task by ID or url.")
+    .command("progress [task] <progress>", "Add progress to a task.")
+    .command("log [task] <timestamp>", "Log time to a task or project.")
+    .command("logs [task]", "Get the time logs for a task.")
     .command("login", "Login to Teamwork.")
-    .command("reset", "Delete any configuration files.")
+    .command("reset", "Delete any configuration files (logout).")
     .command("clear", "Clear the current status.")
-    .command("install-hooks", "Install git hooks.")
+    .command("install-hooks [dir]", "Install git hooks.")
+    .command("commit-msg-hook <path>", "Run the commit-msg hook on a file. (Internal)")
     .parse(process.argv);

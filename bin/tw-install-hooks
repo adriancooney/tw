@@ -28,11 +28,14 @@ Promise.try(() => {
             fs.createReadStream(Path.join(hooksPath, hook))
                 .pipe(fs.createWriteStream(newHook))
                 .on("end", () => {
-                    fs.chmod(newHook, 0o0755, resolve);
+                    TeamworkCLI.log("$ chmod 0755 %s", newHook);
+                    fs.chmod(newHook, 0o755, (err) => {
+                        if(err) reject(err);
+                        else resolve();
+                    });
                 });
         });
     }));
 }).catch((err) => {
-    console.log(err);
     TeamworkCLI.fail("Current directory is not a git repository.");
 });

@@ -1,27 +1,45 @@
+import moment from "moment";
+import Model from "../library/Model";
 import Company from "./Company";
+import Tag from "./Tag";
 
-export default class Project {
+export default class Project extends Model {
+    /**
+     * Create a new Project object.
+     * @param  {Object} data 
+     *           {Number} :id
+     *           {String} :name
+     *           {String} :description
+     *           {Object} :company - See Company#constructor.
+     */
     constructor(data) {
-        this.name = data.name;
-        this.description = data.description;
-        this.id = parseInt(data.id);
-        if(data.company) this.company = new Company(data.company);
+        super({
+            id: true,
+            name: true,
+            description: false,
+            domain: false,
+            createdAt: moment,
+            company: Company,
+            tags: Tag,
+            logo: false,
+            status: false
+        }, data);
     }
 
+    /**
+     * Convert the project to a String.
+     * @return {String}
+     */
     toString() {
-        return `Company[name = "${this.name}, description = "${this.description}", id = ${this.id}]`;
+        return `[#${this.id}] ${this.name}`;
     }
 
-    toJSON() {
-        return {
-            name: this.name,
-            description: this.description,
-            id: this.id,
-            company: this.company
-        }
-    }
+    /**
+     * Create a Project object from the Teamwork API.
+     * @param {Object} data Data returned from Teamwork API.
+     * @return {Task} 
+     */
+    static fromAPI(data) {
 
-    toListItem() {
-        return `[#${this.id}] ${this.name} ${ this.description ? "- " + this.description : ""}`;
     }
 }

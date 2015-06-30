@@ -1,0 +1,32 @@
+#!/usr/bin/env babel-node --
+
+import fs from "fs";
+import { resolve } from "path";
+import program from "commander";
+import Promise from "bluebird";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import { Debug } from "../src/library/Debug";
+
+Promise.promisifyAll(fs);
+
+const debug = Debug("tw:cmd:commit-msg-hook");
+
+program.arguments("<path>")
+    .description("Run the commit-msg hook on a file. (Internal)")
+    .parse(process.argv);
+
+Promise.try(() => {
+    var path = program.args[0];
+
+    if(!program.args[0]) throw new CLIError(`Please specify ${TeamworkCLI.color.blue("<path>")} to COMMIT_MSG file.`);
+
+    path = resolve(process.env.PWD, path);
+
+    debug("Fixing commit message in %s.", path);
+
+    return [path, fs.readFileAsync(path)];
+}).spread((path, contents) => {
+    return [path, TeamworkCLI.expandCommitMessage(contents.toString())];
+}).spread((path, message) => {
+    return fs.writeFileAsync(path, message);
+}).catch(TeamworkCLI.fail);

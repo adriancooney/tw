@@ -3,20 +3,49 @@ import Installation from "./model/Installation";
 
 export default class Teamwork {
     /**
-     * Parses a Teamwork timestamp.
-     * @param  {String} timestamp See spec.
+     * Parses a Teamwork duration.
+     * @param  {String} duration See spec.
      * @return {moment.duration}
      */
-    static parseTimestamp(timestamp) {
-        var hours = timestamp.match(/(\d+)h/),
-            minutes = timestamp.match(/(\d+)m/);
+    static parseDuration(duration) {
+        var hours = duration.match(/(\d+)h/),
+            minutes = duration.match(/(\d+)m/);
 
         if(hours || minutes) {
             return moment.duration({
                 minutes: minutes ? parseInt(minutes[1]) : undefined,
                 hours: hours ? parseInt(hours[1]) : undefined
             });
-        } else throw new ParserError(`Invalid timestamp "${timestamp}".`);
+        } else throw new ParserError(`Invalid duration "${duration}".`);
+    }
+
+    /**
+     * Parse a commit and return intentions.
+     * @param  {String} msg Commit msg.
+     * @return {Object}     { tasks, }
+     */
+    static parseCommit(msg) {
+        // TODO: Multiple actions of the same type in the one message
+        // Attempt to find logs
+        return [
+            // I'm not sure if this is a good way to go about it but I don't care anymore
+            { type: "log", groups: ["duration", "task"], regex: /log\s+(\d+[hm](?:\d+[hm])?)\s+to\s+#(\d+)/i },
+            { type: "close", groups: ["task"], regex: /close\s+#(\d+)/i }
+        ].reduce((intentions, matcher) => {
+            var matches = msg.match(matcher.regex);
+
+            if(matches) {
+                intentions.push({
+                    action: matcher.type,
+                    data: matcher.groups.reduce((store, group, i) => {
+                        store[group] = matches[i + 1];
+                        return store;
+                    }, {})
+                });
+            } 
+
+            return intentions;
+        }, []);
     }
 
     static parsePercent(percent) {
@@ -24,16 +53,16 @@ export default class Teamwork {
     }
 
     /**
-     * Parse a teamwork task.
+     * Parse a teamwork task and return an ID.
      * @param  {Task} task 
-     * @return {Number}
+     * @return {Number} Task id.
      */
     static parseTask(task) {
-        var id = task.match(/#(\d+)/);
+        var id = task.match(/^#?(\d+)$|^https?:\/\/\w+\.teamwork.com\/tasks\/(\d+)$/);
 
         if(!id) throw new ParserError(`Invalid task "${task}".`);
 
-        return id[1];
+        return parseInt(id[1] || id[2]);
     }
 
     /**

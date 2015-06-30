@@ -1,0 +1,41 @@
+#!/usr/bin/env babel-node --
+
+// Get the last commit
+import { exec } from "child_process";
+import Promise from "bluebird";
+import moment from "moment";
+import Teamwork from "../Teamwork";
+import TeamworkCLI from "../TeamworkCLI";
+
+// Promisify method
+var run = Promise.promisify(exec);
+
+Promise.try(() => {
+    return run("git log -1 --pretty=%B");
+}).spread((commit, stderr) => {
+    var intentions = Teamwork.parseCommit(commit)
+
+    if(intentions.length) return [commit, intentions, TeamworkCLI.getAPI()]
+}).spread((commit, intentions, api) => {
+    return Promise.each(intentions, (intention) => {
+        switch(intention.action) {
+            case "log":
+                // Get the task by id
+                return api.getTaskByID(parseInt(intention.data.task)).then((task) => {
+                    var user = TeamworkCLI.getCurrent("user"),
+                        duration = Teamwork.parseTimestamp(intention.data.duration),
+                        now = moment();
+
+                    TeamworkCLI.log(`${task.toString()}\n${TeamworkCLI.color.green(user.getNameInitialed())} logged ${TeamworkCLI.color.magenta(duration.humanize())} ${now.calendar()}.`);
+
+                    // Log the time
+                    return api.log(user, task, duration, now, commit);
+                });
+            break;
+
+            case "close":
+
+            break;
+        }
+    });
+}).catch(TeamworkCLI.fail);

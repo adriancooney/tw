@@ -1,25 +1,16 @@
-import { Debug } from "../library/Debug";
+import Model from "../library/Model";
 
-const debug = Debug("teamwork:model:Person");
-
-export default class Person {
+export default class Person extends Model {
     constructor(data) {
-        this.firstName = data.firstName || data['first-name'];
-        this.lastName = data.lastName || data['last-name'];
-        this.name = `${this.firstName} ${this.lastName}`
-        this.avatar = data['avatar-url'];
-        this.id = parseInt(data.id);
-        debug("Creating new Person[name = \"%s\"]", this.name);
-    }
+        super({
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatar: false,
+            username: false
+        }, data);
 
-    toJSON() {
-        return {
-            name: this.name,
-            firstName: this.firstName,
-            lastName: this.lastName,
-            avatar: this.avatar,
-            id: this.id
-        }
+        this.name = `${this.firstName} ${this.lastName}`
     }
 
     getNameInitialed() {

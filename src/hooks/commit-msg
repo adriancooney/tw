@@ -1,0 +1,15 @@
+#!/bin/sh
+# 
+# This hook expands any tasks and references them in the bottom of 
+# the commits. For example, if this was a commit message:
+# 
+#      Completed task #124124. Moving onto newer and better things.
+# 
+# Would translate to:
+# 
+#      Completed task #124124. Moving onto newer and better things.
+# 
+#      [#124124] Fix SVG's in IE and firefox (80%, Adrian C., high)
+#      http://digitalcrew.teamwork.com/tasks/124124
+# 
+tw commit-msg-hook $1

@@ -320,7 +320,48 @@ export default class TeamworkCLI {
     static indent(block, chars = "# ") {
         return chars + block.split("\n").join("\n" + chars);
     }
-}
+
+    /**
+     * Expand a commit message.
+     * @param  {String} message Commit message.
+     * @return {Promise} -> {String}
+     */
+    static expandCommitMessage(message) {
+        var tasks = [];
+
+        // Find all the task ID's or URL
+        message = message.replace(/\#(\d+)|(?:https?:\/\/)?\w+\.teamwork\.com\/tasks\/(\d+)(?:\.json)?/g, (match, id1, id2) => {
+            var id = parseInt(id1 || id2, 10);
+
+            tasks.push(id);
+
+            return "#" + id;
+        });
+
+        // Remove any duplicates
+        tasks = tasks.reduce((flattened, id) => {
+            if(flattened.indexOf(id) === -1) flattened.push(id);
+            return flattened;
+        }, []);
+
+        return TeamworkCLI.getAPI().then((api) => {
+            // Get all the tasks
+            return Promise.map(tasks, api.getTaskByID.bind(api), { concurrency: 1 });
+        }).catch((err) => {
+            if(err.code === 404) {
+                var installation = TeamworkCLI.getCurrent("installation");
+                throw new CLIError(`Task #${err.id} not found in ${installation.toCLIString()}.`);
+            } else throw err;
+        }).then((tasks) => {
+            // Generate the task index
+            tasks = tasks.map((task) => {
+                return task.toString() + "\n" + task.getURL();
+            }).join("\n\n") + "\n\n";
+
+            // Add it to the commit
+            return message.replace(/# Please enter the commit/, tasks + "# Please enter the commit");
+        });
+    }}
 
 // Export handy acces to Chalk
 TeamworkCLI.color = chalk;

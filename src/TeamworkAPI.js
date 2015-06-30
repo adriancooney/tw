@@ -48,7 +48,7 @@ export default class TeamworkAPI {
                     if(response.statusCode >= 200 && response.statusCode < 300) resolve({ body, response, url });
                     else {
                         debug("%s Error %j", response.statusCode, body);
-                        reject(new HTTPError(response.statusCode));
+                        reject(new HTTPError(response.statusCode, null, url));
                     }
                 }
             });
@@ -261,9 +261,9 @@ export default class TeamworkAPI {
             task.domain = this.installation.domain;
             return Task.fromAPI(task);
         }).catch(HTTPError, (err) => {
-            if(err.code === 404) throw new NotFoundError(`Task #${task} not found.`);
+            if(err.code === 404) throw new NotFoundError(`Task #${task} not found.`, task);
             else throw err; // Not ours to handle
-        })
+        });
     }
 
     /**
@@ -381,19 +381,21 @@ export default class TeamworkAPI {
 }
 
 export class HTTPError extends Error {
-    constructor(code, message) {
+    constructor(code, message, url) {
         super();
 
         var statusMessage = http.STATUS_CODES[code];
         this.message = `HTTP Error ${code}: ${message || statusMessage}`
         this.code = this.statusCode = code;
         this.statusMessage = statusMessage;
+        this.url = url;
     }
 }
 
 export class NotFoundError extends HTTPError {
-    constructor(reason) {
+    constructor(reason, id) {
         super(404);
         this.message = reason;
+        this.id = id;
     }
 }

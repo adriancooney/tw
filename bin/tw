@@ -19,4 +19,5 @@ program
     .command("reset", "Delete any configuration files (logout).")
     .command("clear", "Clear the current status.")
     .command("install-hooks [dir]", "Install git hooks.")
+    .command("commit-msg-hook <path>", "Run the commit-msg hook on a file. (Internal)")
     .parse(process.argv);

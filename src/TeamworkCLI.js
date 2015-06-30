@@ -355,12 +355,17 @@ export default class TeamworkCLI {
                 } else throw err;
             }).then((tasks) => {
                 // Generate the task index
-                tasks = tasks.map((task) => {
+                tasks = "\n" + tasks.map((task) => {
                     return task.toString() + "\n" + task.getURL();
-                }).join("\n\n") + "\n\n";
+                }).join("\n\n");
 
                 // Add it to the commit
-                return message.replace(/# Please enter the commit/, tasks + "# Please enter the commit");
+                var standardCommit = /# Please enter the commit/;
+
+                if(message.match(standardCommit)) message = message.replace(standardCommit, tasks+ "\n\n# Please enter the commit");
+                else message += tasks;
+
+                return message;
             });
         } else return Promise.resolve(message);
     }   

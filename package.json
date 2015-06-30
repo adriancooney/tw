@@ -6,7 +6,9 @@
   "bin": {
     "tw": "./bin/tw"
   },
-  "files": ["build"],
+  "files": [
+    "build"
+  ],
   "scripts": {
     "test": "mocha --compilers js:babel/register",
     "bin-tool": "sed -i.bak s/babel-node\\ --/node/g ./build/bin/* && rm build/bin/*.bak && rename build/bin/*.js --delete=\".js\" && chmod +x build/bin/* && cp ./package.json build/package.json",
@@ -21,8 +23,10 @@
     "babel": "^5.6.14",
     "chalk": "^1.0.0",
     "commander": "^2.8.1",
+    "editor": "^1.0.0",
     "inquirer": "^0.8.5",
     "open": "0.0.5",
+    "os-tmpdir": "^1.0.1",
     "rc": "^1.0.3"
   },
   "dependencies": {

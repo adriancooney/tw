@@ -30,6 +30,7 @@ export default class Task extends Model {
             id: true,
             title: true,
             description: false,
+            domain: false,
             status: false,
             priority: false,
             progress: false,
@@ -88,6 +89,7 @@ export default class Task extends Model {
             id: task.id,
             title: task.content,
             description: task.description,
+            domain: task.domain,
             status: task.status,
             priority: task.priority,
             progress: task.progress,
@@ -135,5 +137,9 @@ export default class Task extends Model {
         }
 
         return new Task(data);
+    }
+
+    getURL() {
+        return `http://${this.domain}/tasks/${this.id}`;
     }
 }

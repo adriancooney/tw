@@ -17,6 +17,7 @@ export default class Project extends Model {
             id: true,
             name: true,
             description: false,
+            domain: false,
             createdAt: moment,
             company: Company,
             tags: Tag,

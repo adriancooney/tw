@@ -1,6 +1,5 @@
 import moment from "moment";
 import Model from "../library/Model";
-import TeamworkCLI from "../TeamworkCLI";
 import Person from "./Person";
 import Task from "./Task";
 import Tasklist from "./Tasklist";
@@ -27,7 +26,7 @@ export default class Log extends Model {
     }
 
     toString() {
-        return `${TeamworkCLI.color.green(this.author.getNameInitialed())} logged ${TeamworkCLI.color.magenta(this.duration.humanize())} ${this.date.calendar()}.\n > ${this.description}` 
+        return `${this.author.getNameInitialed()} logged ${this.duration.humanize()} ${this.date.calendar()}.\n > ${this.description.split("\n").join("\n > ")}` 
     }
 
     /**

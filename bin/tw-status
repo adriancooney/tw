@@ -11,11 +11,11 @@ var currentProject = TeamworkCLI.getCurrent("project"),
 var userString;
 
 if(currentUser) {
-    userString = `${TeamworkCLI.color.green(currentUser.getNameInitialed())} logged into ${TeamworkCLI.color.magenta(currentInstallation.name)} (${currentInstallation.domain})`
+    userString = `${TeamworkCLI.color.green(currentUser.getNameInitialed())} logged into ${currentInstallation.toCLIString()}`;
 }
 
 TeamworkCLI.log(
 `${userString || "Not logged in."}
-${TeamworkCLI.color.blue("Project:")} ${currentProject ? currentProject.name : "None"}
-${TeamworkCLI.color.blue("Tasklist:")} ${currentTasklist ? currentTasklist.name : "None"}
-${TeamworkCLI.color.blue("Task:")} ${currentTask ? currentTask.toString() : "None"}`)
+ ${TeamworkCLI.color.blue("Project:")} ${currentProject ? currentProject.toCLIString() : "None"}
+${TeamworkCLI.color.blue("Tasklist:")} ${currentTasklist ? currentTasklist.toCLIString() : "None"}
+    ${TeamworkCLI.color.blue("Task:")} ${currentTask ? currentTask.toCLIString() : "None"}`)

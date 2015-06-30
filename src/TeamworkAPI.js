@@ -45,8 +45,11 @@ export default class TeamworkAPI {
             }, (err, response, body) => {
                 if(err) throw err;
                 else {
-                    if(response.statusCode >= 200 && response.statusCode < 300) resolve({ body, response });
-                    else reject(new HTTPError(response.statusCode));
+                    if(response.statusCode >= 200 && response.statusCode < 300) resolve({ body, response, url });
+                    else {
+                        debug("%s Error %j", response.statusCode, body);
+                        reject(new HTTPError(response.statusCode));
+                    }
                 }
             });
         });
@@ -173,6 +176,33 @@ export default class TeamworkAPI {
     }
 
     /**
+     * Get a project by ID.
+     * @param  {Number} project Project Id.
+     * @return {Promise} -> {Project}
+     */
+    getProjectByID(project) {
+        return this.request("GET", `/projects/${project}.json`).then(({ body, url }) => {
+            var project = body.project;
+            return new Project({
+                id: parseInt(project.id),
+                name: project.name,
+                domain: this.installation.domain,
+                createdAt: project['created-on'],
+                status: project.status,
+                description: project.description,
+                category: {
+                    id: parseInt(project.category.id),
+                    name: project.name
+                },
+                company: {
+                    id: parseInt(project.company.id),
+                    name: project.company.name
+                }
+            });
+        });
+    }
+
+    /**
      * Get an array of taskslist from a project.
      * @param  {Project} project 
      * @return {Promise} -> {Array[Tasklist]}
@@ -180,19 +210,19 @@ export default class TeamworkAPI {
     getTasklists(project) {
         return this.request("GET", `/projects/${project.id}/tasklists.json`).then(({ body }) => {
             return body.tasklists.map((tasklist) => {
-                return new Tasklist({
-                    id: parseInt(tasklist.id),
-                    name: tasklist.name,
-                    description: tasklist.description,
-                    complete: tasklist.complete,
-                    private: tasklist.private,
-                    uncompletedCount: parseInt(tasklist['uncompleted-count']) || 0,
-                    project: {
-                        id: parseInt(tasklist.projectId),
-                        name: tasklist.projectName
-                    },
-                });
+                return Tasklist.fromAPI(tasklist);
             });
+        });
+    }
+
+    /**
+     * Get a task list by ID.
+     * @param  {Number} tasklist Tasklist ID.
+     * @return {Promise} -> {Tasklist}
+     */
+    getTasklistByID(tasklist) {
+        return this.request("GET", `/tasklists/${tasklist}.json`).then(({body}) => {
+            return new Tasklist.fromAPI(body["todo-list"]);
         });
     }
 
@@ -212,8 +242,9 @@ export default class TeamworkAPI {
      * @return {Promise} -> {Array[Task]}
      */
     getTasksForTasklist(tasklist) {
-        return this.request("GET", `/tasklists/${tasklist.id}/tasks.json`).then(({ body }) => {
+        return this.request("GET", `/tasklists/${tasklist.id}/tasks.json`).then(({ body, url }) => {
             return body["todo-items"].map((task) => {
+                task.domain = this.installation.domain;
                 return Task.fromAPI(task);
             });
         });
@@ -226,7 +257,9 @@ export default class TeamworkAPI {
      */
     getTaskByID(task) {
         return this.request("GET", `/tasks/${task}.json`).then(({ body }) => {
-            return Task.fromAPI(body["todo-item"]);
+            var task = body["todo-item"];
+            task.domain = this.installation.domain;
+            return Task.fromAPI(task);
         }).catch(HTTPError, (err) => {
             if(err.code === 404) throw new NotFoundError(`Task #${task} not found.`);
             else throw err; // Not ours to handle
@@ -288,14 +321,37 @@ export default class TeamworkAPI {
     /**
      * Log time to a task.
      * @param  {Task} task    The task to log time to.
-     * @param {User} user The user to log the time to.
-     * @param  {Moment.duration} duration The duration of the timelog.
-     * @param  {Moment} offset   The time when the log started.
-     * @param  {String} comment  The message to log with.
+     * @param  {User} user The user to log the time to.
+     * @param  {Log} log The log to log.
      * @return {Promise}
      */
     logToTask(task, user, log) {
         return this.request("POST", `/tasks/${task.id}/time_entries.json`, {
+            "time-entry": {
+                description: log.description,
+                "person-id": user.id,
+                "date": log.date.format("YYYYMMDD"),
+                "time": log.date.format("HH:mm"),
+                "hours": log.hours,
+                "minutes": log.minutes,
+                "isBillable": log.isBilled
+            }
+        }).then(({ body }) => {
+            log.id = parseInt(body.timeLogId);
+
+            return log;
+        });
+    }
+
+    /**
+     * Log time to a Project.
+     * @param  {Project} task    The task to log time to.
+     * @param  {User} user The user to log the time to.
+     * @param  {Log} log The log to log.
+     * @return {Promise}
+     */
+    logToProject(project, user, log) {
+        return this.request("POST", `/projects/${project.id}/time_entries.json`, {
             "time-entry": {
                 description: log.description,
                 "person-id": user.id,

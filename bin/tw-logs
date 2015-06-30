@@ -37,12 +37,12 @@ TeamworkCLI.getAPI().then((api) => {
             else return task;
         }
     }).then((task) => {
-        TeamworkCLI.log(task.toItem());
+        TeamworkCLI.log(task.toString());
         return api.getLogs(task);
     }).then((logs) => {
         if(logs.length) {
             logs.forEach((log, i) => {
-                TeamworkCLI.log(`#${i + 1} ` + log.toListItem());
+                TeamworkCLI.log(`#${i + 1} ` + log.toString());
             });
         } else {
             TeamworkCLI.log(TeamworkCLI.color.red("No time logged."));

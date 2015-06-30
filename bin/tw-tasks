@@ -2,7 +2,7 @@
 
 import program from "commander";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
-import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
+import TeamworkAPI from "../src/TeamworkAPI";
 
 program
     .option("-l, --list", "Display tasks as a static list.")

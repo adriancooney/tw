@@ -8,15 +8,15 @@ export default class Teamwork {
      * @return {moment.duration}
      */
     static parseDuration(duration) {
-        var hours = timestamp.match(/(\d+)h/),
-            minutes = timestamp.match(/(\d+)m/);
+        var hours = duration.match(/(\d+)h/),
+            minutes = duration.match(/(\d+)m/);
 
         if(hours || minutes) {
             return moment.duration({
                 minutes: minutes ? parseInt(minutes[1]) : undefined,
                 hours: hours ? parseInt(hours[1]) : undefined
             });
-        } else throw new ParserError(`Invalid duration "${timestamp}".`);
+        } else throw new ParserError(`Invalid duration "${duration}".`);
     }
 
     /**
@@ -53,16 +53,16 @@ export default class Teamwork {
     }
 
     /**
-     * Parse a teamwork task.
+     * Parse a teamwork task and return an ID.
      * @param  {Task} task 
      * @return {Number} Task id.
      */
     static parseTask(task) {
-        var id = task.match(/#(\d+)/);
+        var id = task.match(/^#?(\d+)$|^https?:\/\/\w+\.teamwork.com\/tasks\/(\d+)$/);
 
         if(!id) throw new ParserError(`Invalid task "${task}".`);
 
-        return id[1];
+        return parseInt(id[1] || id[2]);
     }
 
     /**

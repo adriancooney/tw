@@ -35,7 +35,18 @@ export default class Tasklist extends Model {
      * @param {Object} data Data returned from Teamwork API.
      * @return {Task} 
      */
-    static fromAPI(data) {
-
+    static fromAPI(tasklist) {
+        return new Tasklist({
+            id: parseInt(tasklist.id),
+            name: tasklist.name,
+            description: tasklist.description,
+            complete: tasklist.complete,
+            private: tasklist.private,
+            uncompletedCount: parseInt(tasklist['uncompleted-count']) || 0,
+            project: {
+                id: parseInt(tasklist.projectId),
+                name: tasklist.projectName
+            },
+        });
     }
 }

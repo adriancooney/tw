@@ -344,24 +344,27 @@ export default class TeamworkCLI {
             return flattened;
         }, []);
 
-        return TeamworkCLI.getAPI().then((api) => {
-            // Get all the tasks
-            return Promise.map(tasks, api.getTaskByID.bind(api), { concurrency: 1 });
-        }).catch((err) => {
-            if(err.code === 404) {
-                var installation = TeamworkCLI.getCurrent("installation");
-                throw new CLIError(`Task #${err.id} not found in ${installation.toCLIString()}.`);
-            } else throw err;
-        }).then((tasks) => {
-            // Generate the task index
-            tasks = tasks.map((task) => {
-                return task.toString() + "\n" + task.getURL();
-            }).join("\n\n") + "\n\n";
+        if(tasks.length) {
+            return TeamworkCLI.getAPI().then((api) => {
+                // Get all the tasks
+                return Promise.map(tasks, api.getTaskByID.bind(api), { concurrency: 1 });
+            }).catch((err) => {
+                if(err.code === 404) {
+                    var installation = TeamworkCLI.getCurrent("installation");
+                    throw new CLIError(`Task #${err.id} not found in ${installation.toCLIString()}.`);
+                } else throw err;
+            }).then((tasks) => {
+                // Generate the task index
+                tasks = tasks.map((task) => {
+                    return task.toString() + "\n" + task.getURL();
+                }).join("\n\n") + "\n\n";
 
-            // Add it to the commit
-            return message.replace(/# Please enter the commit/, tasks + "# Please enter the commit");
-        });
-    }}
+                // Add it to the commit
+                return message.replace(/# Please enter the commit/, tasks + "# Please enter the commit");
+            });
+        } else return Promise.resolve(message);
+    }   
+}
 
 // Export handy acces to Chalk
 TeamworkCLI.color = chalk;

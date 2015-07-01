@@ -1,0 +1,36 @@
+#!/usr/bin/env babel-node --
+
+import fs from "fs";
+import { exec } from "child_process";
+import { resolve } from "path";
+import program from "commander";
+import Promise from "bluebird";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import { Debug } from "../src/library/Debug";
+
+// Promisify method
+var run = Promise.promisify(exec);
+
+const debug = Debug("tw:hook:post-commit");
+
+program
+    .description("Run the post-commit hook in a git repository. (Internal)")
+    .parse(process.argv);
+
+Promise.try(() => {
+    // Since this SHOULD be run in the .git/hooks directory,
+    // we should be able to step back up two directories and
+    // run git commands.
+    var repo = resolve(process.env.PWD, "../..");
+
+    debug("Running post-commit hook message in %s.", repo);
+
+    return run("git log -1 --pretty=%B", {
+        cwd: repo
+    });
+}).spread((message, err) => {
+    // We got out commit message
+    if(message) {
+        return TeamworkCLI.processCommitMessage(message);
+    } else throw new CLIError("Unknown git output.");
+}).catch(TeamworkCLI.fail);

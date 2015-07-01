@@ -2,7 +2,7 @@
   "name": "tw",
   "version": "0.1.0",
   "description": "Teamwork Projects CLI and git integration.",
-  "main": "index.js",
+  "main": "build/src/TeamworkAPI.js",
   "bin": {
     "tw": "./bin/tw"
   },

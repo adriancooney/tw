@@ -10,6 +10,8 @@ import Teamwork from "./Teamwork";
 import TeamworkAPI from "./TeamworkAPI";
 import { Debug } from "./library/Debug";
 
+import PostCommitParser from "./parser/post-commit";
+
 import {
     Log,
     Task,
@@ -355,15 +357,35 @@ export default class TeamworkCLI {
                 } else throw err;
             }).then((tasks) => {
                 // Generate the task index
-                tasks = tasks.map((task) => {
+                tasks = "\n" + tasks.map((task) => {
                     return task.toString() + "\n" + task.getURL();
-                }).join("\n\n") + "\n\n";
+                }).join("\n\n");
 
                 // Add it to the commit
-                return message.replace(/# Please enter the commit/, tasks + "# Please enter the commit");
+                var standardCommit = /# Please enter the commit/;
+
+                if(message.match(standardCommit)) message = message.replace(standardCommit, tasks+ "\n\n# Please enter the commit");
+                else message += tasks;
+
+                return message;
             });
         } else return Promise.resolve(message);
-    }   
+    }
+
+    /**
+     * Process commit messages and generate actions. See parser/post-commit.pegjs
+     *         
+     * @param  {String} message Commit message.
+     * @return {Promise} -> {Array[Action]}
+     */
+    static processCommitMessage(message) {
+        // This is just the most awesome thing ever. PEGjs, everyone.
+        return Promise.try(() => {
+            var actions = PostCommitParser.parse(message);
+
+            console.log(actions);
+        });
+    }
 }
 
 // Export handy acces to Chalk

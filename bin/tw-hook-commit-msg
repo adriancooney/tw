@@ -9,7 +9,7 @@ import { Debug } from "../src/library/Debug";
 
 Promise.promisifyAll(fs);
 
-const debug = Debug("tw:cmd:commit-msg-hook");
+const debug = Debug("tw:hook:commit-msg");
 
 program.arguments("<path>")
     .description("Run the commit-msg hook on a file. (Internal)")

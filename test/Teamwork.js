@@ -3,37 +3,76 @@ import Teamwork from "../src/Teamwork";
 import Task from "../src/model/Task";
 
 describe("Teamwork", () => {
-    describe(".parseTask", () => {
-        it("should parse a task ID", () => {
-            var id = 142142, task = Teamwork.parseTask("#" + id);
-            assert.equal(task, id);
+    describe(".parse('duration', content)", () => {
+        it("should parse the duration", () => {
+            var duration = Teamwork.parse("duration", "2h30m");
+
+            assert(typeof duration === "object");
+            assert.equal(duration.hours, 2);
+            assert.equal(duration.minutes, 30);
         });
 
-        it("should parse a task URL", () => {
-            var id = 142142, task = Teamwork.parseTask("http://digitalcrew.teamwork.com/tasks/" + id);
-            assert.equal(task, id);
+        it("should throw an error for an invalid duration", () => {
+            assert.throws(() => {
+                Teamwork.parse("duration", "20t80f");
+            }, /Invalid duration/);
         });
     });
 
-    describe(".parseCommit", () => {
-        it("should parse commit messages and extract the correct intentions", () => {
-            var intentions = Teamwork.parseCommit("foo bar, Log 2h to #4124124");
+    describe(".parse('installation', content)", () => {
+        it("should parse the installation", () => {
+            assert.equal(Teamwork.parse("installation", "chattest.teamwork.com"), "chattest.teamwork.com", "Host");
+            assert.equal(Teamwork.parse("installation", "chattest.teamwork.com/"), "chattest.teamwork.com", "Host with trailing slash");
+            assert.equal(Teamwork.parse("installation", "http://chattest.teamwork.com/"), "chattest.teamwork.com", "Host with trailing slash and http");
+            assert.equal(Teamwork.parse("installation", "https://chattest.teamwork.com/"), "chattest.teamwork.com", "Host with trailing slash and https");
+            assert.equal(Teamwork.parse("installation", "https://chattest.teamwork.com/foo/bar"), "chattest.teamwork.com", "Host with trailing slash, https and path");
+        });
 
-            assert(Array.isArray(intentions));
-            assert.equal(intentions[0].action, "log");
-            assert.equal(intentions[0].data.duration, "2h");
-            assert.equal(intentions[0].data.task, "4124124");
+        it("should throw an error for an invalid installation", () => {
+            assert.throws(() => {
+                Teamwork.parse("installation", "goobar.lol.com");
+            }, /Invalid installation/);
+        });
+    });
 
-            intentions = Teamwork.parseCommit("foo bar, close #4124124");
+    describe(".parse('task', content)", () => {
+        it("should parse the task", () => {
+            assert.equal(Teamwork.parse("task", "#124124"), 124124, "ID");
+            assert.equal(Teamwork.parse("task", "chattest.teamwork.com/tasks/124124"), 124124, "URL");
+            assert.equal(Teamwork.parse("task", "http://chattest.teamwork.com/tasks/124124"), 124124, "URL");
+            assert.equal(Teamwork.parse("task", "https://chattest.teamwork.com/tasks/124124"), 124124, "URL");
+        });
 
-            assert.equal(intentions[0].action, "close");
-            assert.equal(intentions[0].data.task, '4124124');
+        it("should throw an error for an invalid task", () => {
+            assert.throws(() => {
+                Teamwork.parse("task", "#abcd");
+            }, /Invalid task/);
+        });
+    });
 
-            intentions = Teamwork.parseCommit("foo bar, log 2h to #124124 and close #124124, foo bar");
+    describe(".parse('progress', content)", () => {
+        it("should parse the progress", () => {
+            var progress = Teamwork.parse("progress", "30%");
 
-            assert.equal(intentions.length, 2);
-            assert.equal(intentions[0].action, "log")
-            assert.equal(intentions[1].action, "close")
+            assert(typeof progress === "object");
+            assert(!progress.relative);
+            assert.equal(progress.percent, 30);
+
+            progress = Teamwork.parse("progress", "-100%");
+
+            assert(progress.relative);
+            assert.equal(progress.percent, -100);
+
+            progress = Teamwork.parse("progress", "+5%");
+
+            assert(progress.relative);
+            assert.equal(progress.percent, 5);
+        });
+
+        it("should throw an error for an invalid progress", () => {
+            assert.throws(() => {
+                Teamwork.parse("progress", "-ee%");
+            }, /Invalid progress/);
         });
     });
 });

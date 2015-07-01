@@ -18,10 +18,7 @@ program
     .parse(process.argv);
 
 Promise.try(() => {
-    // Since this SHOULD be run in the .git/hooks directory,
-    // we should be able to step back up two directories and
-    // run git commands.
-    var repo = resolve(process.env.PWD, "../..");
+    var repo = process.env.PWD;
 
     debug("Running post-commit hook message in %s.", repo);
 

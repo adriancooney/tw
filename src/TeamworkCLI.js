@@ -7,7 +7,6 @@ import rc from "rc";
 import tmpdir from "os-tmpdir";
 import editor from "editor";
 import Teamwork from "./Teamwork";
-import TeamworkAPI from "./TeamworkAPI";
 import { Debug } from "./library/Debug";
 
 import {
@@ -207,7 +206,7 @@ export default class TeamworkCLI {
 
             if(!config.api) throw new CLIError("Not logged in. Please login.");
 
-            var api = new TeamworkAPI(config.api.auth, config.api.installation);
+            var api = new Teamwork(config.api.auth, config.api.installation, config.api.actions);
 
             // Overwrite the request method so that
             // we can set the loading state of the CLI
@@ -379,9 +378,30 @@ export default class TeamworkCLI {
     static processCommitMessage(message) {
         // This is just the most awesome thing ever. PEGjs, everyone.
         return Promise.try(() => {
-            var actions = Teamwork.parseCommit(message);
+            // Parse the actions from the commit message
+            var actions = Teamwork.parse("commit", message);
 
-            console.log(actions);
+            // Execute them
+            if(actions.length) {
+                return TeamworkCLI.getAPI().then((api) => {
+                    return Promise.map(action, (action) => {
+                        switch(action.name) {
+                            case "Log": 
+                                // Gather all the information required for the action
+                                var user = TeamworkCLI.getCurrent("user");
+                                return api.getTaskByID(action.task).then((task) => {
+                                    action.task = task;
+                                    action.user = user;
+
+                                    return action;
+                                });
+                            break;
+                        }
+                    }).then((actions) => {
+                        return api.processActions(actions);
+                    });
+                });
+            }
         });
     }
 }

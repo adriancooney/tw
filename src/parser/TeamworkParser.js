@@ -53,7 +53,7 @@ module.exports = (function() {
         peg$c16 = "fix",
         peg$c17 = { type: "literal", value: "fix", description: "\"fix\"" },
         peg$c18 = function(task) {
-            return { action: "CloseTask", task: task }
+            return { name: "CloseTask", task: task }
         },
         peg$c19 = "log",
         peg$c20 = { type: "literal", value: "log", description: "\"log\"" },
@@ -70,14 +70,14 @@ module.exports = (function() {
         peg$c31 = "worked",
         peg$c32 = { type: "literal", value: "worked", description: "\"worked\"" },
         peg$c33 = function(duration, task) {
-           return { action: "Log", duration: duration, task: task }
+           return { name: "Log", duration: duration, task: task }
         },
         peg$c34 = "add",
         peg$c35 = { type: "literal", value: "add", description: "\"add\"" },
         peg$c36 = "progress",
         peg$c37 = { type: "literal", value: "progress", description: "\"progress\"" },
         peg$c38 = function(progress, task) {
-            return { action: "ProgressTask", progress: progress, task: task }
+            return { name: "ProgressTask", progress: progress, task: task }
         },
         peg$c39 = "to",
         peg$c40 = { type: "literal", value: "to", description: "\"to\"" },

@@ -1,0 +1,12 @@
+#!/usr/bin/env babel-node --
+
+import program from "commander";
+import TeamworkCLI from "../src/TeamworkCLI";
+
+program
+    .description("Redo the last action.")
+    .parse(process.argv);
+
+TeamworkCLI.getAPI().then((api) => {
+    return api.redo();
+}).catch(TeamworkCLI.fail);

@@ -28,6 +28,7 @@ export default class TeamworkAPI {
     constructor(auth, installation) {
         this.auth = auth;
         this.installation = installation;
+        this.actions = [];
     }
 
     /**
@@ -74,7 +75,7 @@ export default class TeamworkAPI {
      * @param  {String} installation Teamwork installation URL.
      * @return {Promise} -> {TeamworkAPI} Authenticated Teamwork API.
      */
-    static login(email, password, installation) {
+    static login(email, password, installation, api = TeamworkAPI) {
         // Allow passing on Installation object.
         if(typeof installation === "string") installation = Teamwork.parseInstallation(installation);
         else if(!(installation instanceof Installation)) throw new Error("Installation parameter must be a String or an Installation object.");
@@ -93,7 +94,7 @@ export default class TeamworkAPI {
                 var auth = authCookie.match(/tw-auth=([a-zA-Z0-9\-]+)/)[1];
 
                 debug("Successfully logged in Teamwork API on %s (%s).", installation, auth);
-                return new TeamworkAPI(auth, installation);   
+                return new api(auth, installation);   
             } else throw new HTTPError(500, "Projects API did not return a tw-auth cookie. Something is very wrong. Let me get back to you on this one..");
         });
     }
@@ -104,12 +105,12 @@ export default class TeamworkAPI {
      * @param  {String} installation Teamwork installation URL.
      * @return {Promise} -> {TeamworkAPI} Authenticate Teamwork API.
      */
-    static loginWithAuth(auth, installation) {
+    static loginWithAuth(auth, installation, api = TeamworkAPI) {
         if(typeof installation === "string") installation = Teamwork.parseInstallation(installation);
         else if(!(installation instanceof Installation)) throw new Error("installation parameter must be a String or an Installation object.");
 
         // Create the installation
-        var api = new TeamworkAPI(auth, installation);
+        var api = new api(auth, installation);
 
         // Test the auth key.
         return api.getProfile().catch(HTTPError, (err) => {

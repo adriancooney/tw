@@ -1,2 +1,2 @@
 #!/bin/sh
-tw hook-post-commit
+DEBUG=tw* tw hook-post-commit

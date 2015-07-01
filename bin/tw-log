@@ -73,7 +73,7 @@ Promise.try(() => {
     if(!duration) throw new CLIError("Please supply a task or duration to log.");
 
     // Parse the duration
-    duration = Teamwork.parseDuration(duration);
+    duration = Teamwork.parse("duration", duration);
 
     return [api, item, duration];
 }).spread((api, item, duration) => {
@@ -101,7 +101,7 @@ Promise.try(() => {
 
     // Actually log the time with the API
     // Take a minute to realize the beauty that is the Moment API.
-    return [duration, item, api.log(item, user, Log.create(duration, moment().subtract(duration), message.trim()))];
+    return [duration, item, api.log(item, user, Log.create(moment.duration(duration), moment().subtract(duration), message.trim()))];
 }).spread((duration, item) => {
     TeamworkCLI.log(`Logged ${TeamworkCLI.color.green(duration.humanize())} to ${item.toCLIString()}.`);
 }).catch(TeamworkCLI.fail);

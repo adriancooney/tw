@@ -2,9 +2,8 @@
 
 import program from "commander";
 import Promise from "bluebird";
-import Teamwork from "../src/Teamwork";
+import Teamwork, { LoginError } from "../src/Teamwork";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
-import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
 import { Debug } from "../src/library/Debug";
 
 const debug = Debug("tw:cmd:login");
@@ -35,7 +34,7 @@ Promise.try(() => {
 
             // Find installations associated with the account
             // and ask which one they want to pick
-            return TeamworkAPI.getAccounts(answers.email.trim(), answers.password.trim());
+            return Teamwork.getAccounts(answers.email.trim(), answers.password.trim());
         }).then((installations) => {
             if(!installations.length) throw new CLIError("No accounts found.");
 
@@ -56,7 +55,7 @@ Promise.try(() => {
 
             // Login to the API
             debug("Logging in from prompt: %s, %s", details.email, installation);
-            return TeamworkAPI.login(details.email, details.password, installation);
+            return Teamwork.login(details.email, details.password, installation);
         });
     } else {
         // Ensure we have an installation
@@ -65,11 +64,11 @@ Promise.try(() => {
         if(program.auth) {
             // If were passed an Auth key, login with the auth key
             debug("Logging in from passed auth key: %s, %s", program.auth, program.installation.domain);
-            return TeamworkAPI.loginWithAuth(program.auth, program.installation);
+            return Teamwork.loginWithAuth(program.auth, program.installation);
         } else if(program.email && program.password) {
             // Login with passed details
             debug("Logging via passed in credentials: %s, %s", program.email, program.installation);
-            return TeamworkAPI.login(program.email, program.password, program.installation)
+            return Teamwork.login(program.email, program.password, program.installation)
         } else {
             throw new CLIError(`Please pass either a ${TeamworkCLI.color.blue("--auth")} key or a ${Teamwork.color.blue("--email")} and ${Teamwork.color.blue("--password")}.`);
         }

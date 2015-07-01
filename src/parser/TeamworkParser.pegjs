@@ -7,15 +7,15 @@ commit = actions:( action / any ) * {
 action = logAction / closeAction / progressAction
 
 closeAction = ("complet"i ("ed"i / "es"i / "e"i) / "close"i "s"i? / "fix"i "es"i?) __ task:task {
-    return { action: "CloseTask", task: task }
+    return { name: "CloseTask", task: task }
 }
 
 logAction = ("log"i "ged"i? / "completed"i / "done"i / "did"i / "finished"i / "worked"i) __ duration: duration __ to __ task:task {
-   return { action: "Log", duration: duration, task: task }
+   return { name: "Log", duration: duration, task: task }
 }
 
 progressAction = ("add"i "s"i? / "progress" "es"i?) (__ to)? __ progress:progress __ to __ task:task{
-    return { action: "ProgressTask", progress: progress, task: task }
+    return { name: "ProgressTask", progress: progress, task: task }
 }
 
 to = "to"i / "on"i

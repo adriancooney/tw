@@ -1,0 +1,12 @@
+#!/usr/bin/env babel-node --
+
+import program from "commander";
+import TeamworkCLI from "../src/TeamworkCLI";
+
+program
+    .description("Undo the last action.")
+    .parse(process.argv);
+
+TeamworkCLI.getAPI().then((api) => {
+    return api.undo();
+}).catch(TeamworkCLI.fail);

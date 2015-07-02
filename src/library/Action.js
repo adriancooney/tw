@@ -1,6 +1,8 @@
+import moment from "moment";
+
 export default class Action {
-    constructor({ commit, undo }) {
-        this.commit = commit;
-        this.undo = undo;
+    constructor({ name, timestamp }) {
+        this.name = name;
+        this.timestamp = moment();
     }
 }

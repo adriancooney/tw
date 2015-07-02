@@ -1,17 +1,28 @@
 import moment from "moment";
 import Promise from "bluebird";
-import Action from "./library/Action";
+import Actions, { LogAction } from "./action";
 import TeamworkAPI, { LoginError } from "./TeamworkAPI";
 import TeamworkParser from "./parser/TeamworkParser";
 import { Installation } from "./model/";
+import { Debug } from "./library/Debug";
+
+const debug = Debug("tw");
 
 export default class Teamwork extends TeamworkAPI {
     constructor(auth, installation, actions = {}) {
         super(auth, installation);
-        this.actions = {
-            done: actions.done || [],
-            undone: actions.undone || []
-        };
+
+        ["done", "undone"].forEach((actionType) => {
+            if(actions[actionType]) {
+                actions[actionType] = actions[actionType].map((action) => { 
+                    return new Actions[action.name](action); 
+                });
+            } else actions[actionType] = [];
+        });
+
+        this.actions = actions;
+
+        debug("Initilizing new Teamwork: %j", this.toJSON());
     }
 
     /**
@@ -52,21 +63,7 @@ export default class Teamwork extends TeamworkAPI {
      * @return {Promise}
      */
     log(scope, user, log) {
-        // I am actually astonded I came up with this API. It's beautiful (and I don't mind saying so).
-        return this.pushAction(new Action({
-            commit: () => {
-                return super.log(scope, user, log).then((log) => {
-                    // Save the log for undoing later
-                    return this.log = log;
-                });
-            },
-
-            undo: () => {
-                console.log("Undoing log %s", this.log.toString());
-                // return super.deleteLog(scope, user, this.log);
-                return Promise.resolve();
-            }
-        }));
+        return this.pushAction(new LogAction({ scope, user, log }));
     }
 
     /**
@@ -76,7 +73,7 @@ export default class Teamwork extends TeamworkAPI {
      */
     pushAction(action) {
         // Commit the action
-        return action.commit().finally(() => {
+        return action.commit(this).finally(() => {
             this.actions.done.push(action);
         });
     }
@@ -111,6 +108,17 @@ export default class Teamwork extends TeamworkAPI {
 
             if(action) return this.pushAction(action);
         });
+    }
+
+    /**
+     * Convert the API to JSON.
+     * @return {Object}
+     */
+    toJSON() {
+        var api = super.toJSON();
+        api.actions = this.actions;
+        api.className = "Teamwork";
+        return api;
     }
 
     /**

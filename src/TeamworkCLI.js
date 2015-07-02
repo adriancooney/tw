@@ -8,8 +8,9 @@ import tmpdir from "os-tmpdir";
 import editor from "editor";
 import Teamwork from "./Teamwork";
 import { Debug } from "./library/Debug";
+import Config from "./library/Config";
 
-import {
+import Models, {
     Log,
     Task,
     User,
@@ -190,9 +191,26 @@ export default class TeamworkCLI {
         // TODO: Write config file to custom location
         var configPath = TeamworkCLI.getConfigPath();
 
-        return fs.writeFileAsync(configPath, JSON.stringify(config)).then(() => {
+        return fs.writeFileAsync(configPath, JSON.stringify(config, null, 2)).then(() => {
             debug("Config saved to %s.", configPath);
         });
+    }
+
+    /**
+     * Read in the config.
+     * @return {Object} Config.
+     */
+    static readConfig() {
+        return new Config({
+            Log,
+            Task,
+            User,
+            Person,
+            Project,
+            Tasklist,
+            Installation,
+            "Teamwork": (data) => { return new Teamwork(data.auth, data.installation, data.actions); }
+        }, rc(TEAMWORK_RC_PREFIX, {}, () => {}));
     }
 
     /**
@@ -217,6 +235,8 @@ export default class TeamworkCLI {
                     self.loading(false);
                 });
             };
+
+            config.api = api;
 
             return api;
         });
@@ -248,7 +268,7 @@ export default class TeamworkCLI {
         } else {
             return Promise.try(() => {
                 items.forEach((item) => {
-                    TeamworkCLI.log(item.toListItem());
+                    TeamworkCLI.log(item.toCLIString());
                 });
             });
         }
@@ -404,13 +424,25 @@ export default class TeamworkCLI {
             }
         });
     }
+
+    /**
+     * Create a command that handles errors and saving state.
+     * @param  {Function} callback Callback -> Promise.
+     * @return {Promise}            
+     */
+    static command(callback) {
+        return Promise.try(callback).then(() => {
+            // Save the config
+            return TeamworkCLI.writeConfig(TeamworkCLI.config);
+        }).catch(TeamworkCLI.fail);
+    }
 }
 
 // Export handy acces to Chalk
 TeamworkCLI.color = chalk;
 
-// Use rc to find the config
-TeamworkCLI.config = rc(TEAMWORK_RC_PREFIX, {}, () => {});
+// Read in the config
+TeamworkCLI.config = TeamworkCLI.readConfig();
 
 export class CLIError extends Error {
     constructor(reason, code) {

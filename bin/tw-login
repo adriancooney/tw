@@ -79,7 +79,7 @@ Promise.try(() => {
         // Save the profile
         return TeamworkCLI.set({
             user: profile,
-            api: api.toJSON(),
+            api: api,
             installation: api.installation
         });
     });

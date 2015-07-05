@@ -4,21 +4,28 @@ import Promise from "bluebird";
 import inquirer from "inquirer";
 import chalk from "chalk";
 import rc from "rc";
+import moment from "moment";
 import tmpdir from "os-tmpdir";
 import editor from "editor";
 import Teamwork from "./Teamwork";
 import { Debug } from "./library/Debug";
 import Config from "./library/Config";
+import TeamworkAPI from "./TeamworkAPI";
 
 import Models, {
     Log,
+    Tag,
     Task,
-    User,
     Person,
     Project,
+    Company,
     Tasklist,
     Installation,
 } from "./model";
+
+import {
+    LogAction
+} from "./action";
 
 /**
  * The prefix before the "rc" files. e.g. .teamworkrc
@@ -47,6 +54,14 @@ Promise.promisifyAll(fs);
 const debug = Debug("tw:cli");
 
 export default class TeamworkCLI {
+    static init() {
+        // Export handy acces to Chalk
+        TeamworkCLI.color = chalk;
+
+        // Read in the config
+        TeamworkCLI.config = TeamworkCLI.readConfig();
+    }
+
     /**
      * Fail to execute and exit with a reason and code.
      * @param  {String} reason The reason for the exit.
@@ -165,21 +180,9 @@ export default class TeamworkCLI {
      * @param {*} value The value of the preference. (JSON)
      * @return {Promise}
      */
-    static set(name, value) {
-        return new Promise((resolve, reject) => {
-            if(typeof name === "object") {
-                for(var key in name) {
-                    debug("config set %s = %j", key, name[key]);
-                    TeamworkCLI.config[key] = name[key];
-                }
-            } else {
-                debug("config set %s = %j", name, value);
-                TeamworkCLI.config[name] = value;
-            }
-
-            // And write the config
-            return TeamworkCLI.writeConfig(TeamworkCLI.config);
-        });
+    static save(key, value) {
+        TeamworkCLI.config.set(key, value);
+        return TeamworkCLI.writeConfig(TeamworkCLI.config);
     }
 
     /**
@@ -203,14 +206,34 @@ export default class TeamworkCLI {
     static readConfig() {
         return new Config({
             Log,
+            Tag,
             Task,
-            User,
             Person,
             Project,
             Tasklist,
+            Company,
             Installation,
-            "Teamwork": (data) => { return new Teamwork(data.auth, data.installation, data.actions); }
+            LogAction,
+            Teamwork(data) { return new Teamwork(data.auth, data.installation, data.actions); },
+            moment: {
+                serialize(date) {
+                    return date.toJSON();
+                },
+
+                deserialize(str) {
+                    return moment(str);
+                }
+            }
         }, rc(TEAMWORK_RC_PREFIX, {}, () => {}));
+    }
+
+    /**
+     * Delete the config.
+     * @return {Promise}
+     */
+    static deleteConfig() {
+        var configPath = TeamworkCLI.getConfigPath();
+        return fs.unlinkSync(configPath);
     }
 
     /**
@@ -220,23 +243,19 @@ export default class TeamworkCLI {
      */
     static getAPI() {
         return Promise.try(() => {
-            var config = TeamworkCLI.config;
+            var api = TeamworkCLI.config.get("api");
 
-            if(!config.api) throw new CLIError("Not logged in. Please login.");
-
-            var api = new Teamwork(config.api.auth, config.api.installation, config.api.actions);
+            if(!api) throw new CLIError("Not logged in. Please login.");
 
             // Overwrite the request method so that
             // we can set the loading state of the CLI
-            var self = this, request = api.request;
-            api.request = function() {
+            var self = this, request = TeamworkAPI.request;
+            TeamworkAPI.request = function() {
                 self.loading(true);
                 return request.apply(this, arguments).finally(() => {
                     self.loading(false);
                 });
             };
-
-            config.api = api;
 
             return api;
         });
@@ -263,7 +282,7 @@ export default class TeamworkCLI {
                     }
                 })
             }]).then((answers) => {
-                TeamworkCLI.set(answers);
+                return TeamworkCLI.save(answers);
             });
         } else {
             return Promise.try(() => {
@@ -288,7 +307,7 @@ export default class TeamworkCLI {
      * @return {Model}
      */
     static getCurrent(model) {
-        var data = TeamworkCLI.config[model];
+        var data = TeamworkCLI.config.get(model);
 
         debug("Getting current %s: %j", model, data);
 
@@ -438,11 +457,8 @@ export default class TeamworkCLI {
     }
 }
 
-// Export handy acces to Chalk
-TeamworkCLI.color = chalk;
-
-// Read in the config
-TeamworkCLI.config = TeamworkCLI.readConfig();
+// And go!
+TeamworkCLI.init();
 
 export class CLIError extends Error {
     constructor(reason, code) {

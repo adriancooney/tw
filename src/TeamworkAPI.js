@@ -26,6 +26,10 @@ export default class TeamworkAPI {
      * @param  {String} auth The auth key.
      */
     constructor(auth, installation) {
+        if(typeof installation === "string") {
+            installation = Installation.parse(installation);
+        }
+
         this.auth = auth;
         this.installation = installation;
         this.actions = [];

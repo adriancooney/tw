@@ -213,7 +213,6 @@ export default class TeamworkCLI {
             Tasklist,
             Company,
             Installation,
-            // LogAction,
             Teamwork: { 
                 serialize(api) { return { auth: api.auth, installation: api.installation.domain } },
                 deserialize(data) { return new Teamwork(data.auth, data.installation, data.actions); }
@@ -363,9 +362,7 @@ export default class TeamworkCLI {
         // Find all the task ID's or URL
         message = message.replace(/\#(\d+)|(?:https?:\/\/)?\w+\.teamwork\.com\/tasks\/(\d+)(?:\.json)?/g, (match, id1, id2) => {
             var id = parseInt(id1 || id2, 10);
-
             tasks.push(id);
-
             return "#" + id;
         });
 
@@ -416,21 +413,21 @@ export default class TeamworkCLI {
             // Execute them
             if(actions.length) {
                 return TeamworkCLI.getAPI().then((api) => {
-                    return Promise.map(action, (action) => {
+                    return Promise.map(actions, (action) => {
                         switch(action.name) {
                             case "Log": 
                                 // Gather all the information required for the action
                                 var user = TeamworkCLI.getCurrent("user");
-                                return api.getTaskByID(action.task).then((task) => {
-                                    action.task = task;
-                                    action.user = user;
 
-                                    return action;
+                                // Get the task detail
+                                return api.getTaskByID(action.task).then((task) => {
+                                    var duration = moment.duration(action.duration);
+
+                                    // And log to Teamwork
+                                    return api.log(task, user, Log.create(duration, moment().subtract(duration), message));
                                 });
                             break;
                         }
-                    }).then((actions) => {
-                        return api.processActions(actions);
                     });
                 });
             }
@@ -453,6 +450,11 @@ export default class TeamworkCLI {
 // And go!
 TeamworkCLI.init();
 
+/**
+ * CLIError. Elegantly throw CLI errors which
+ * allow you to exit the program with the appropriate
+ * code.
+ */
 export class CLIError extends Error {
     constructor(reason, code) {
         super();
@@ -474,17 +476,10 @@ TeamworkAPI.request = function() {
 /*
  * Override any toString to add some color and frills
  */
-Log.prototype.toCLIString = function() {
-    return `${TeamworkCLI.color.green(this.author.getNameInitialed())} logged ${TeamworkCLI.color.magenta(this.duration.humanize())} ${this.date.calendar()}.\n > ${this.description.split("\n").join("\n > ")}` 
-};
-
-Project.prototype.toCLIString = function() {
-    return `[#${this.id}] ${TeamworkCLI.color.underline(this.name)}`;
-};
-
-Tasklist.prototype.toCLIString = function() {
-    return `[#${this.id}] ${TeamworkCLI.color.bold(this.name)}`;
-};
+Log.prototype.toCLIString = function() { return `${TeamworkCLI.color.green(this.author.getNameInitialed())} logged ${TeamworkCLI.color.magenta(this.duration.humanize())} ${this.date.calendar()}.\n > ${this.description.split("\n").join("\n > ")}`; };
+Project.prototype.toCLIString = function() { return `[#${this.id}] ${TeamworkCLI.color.underline(this.name)}`; };
+Tasklist.prototype.toCLIString = function() { return `[#${this.id}] ${TeamworkCLI.color.bold(this.name)}`; };
+Installation.prototype.toCLIString = function() { return `${TeamworkCLI.color.cyan(this.name)} (${this.domain})`; };
 
 Task.prototype.toCLIString = function(detailed = true){
     var details = [];
@@ -501,8 +496,4 @@ Task.prototype.toCLIString = function(detailed = true){
     details = details.join(", ");
 
     return `[#${this.id}] ${TeamworkCLI.color.yellow(this.title)} (${details})`
-};
-
-Installation.prototype.toCLIString = function() {
-    return `${TeamworkCLI.color.cyan(this.name)} (${this.domain})`;
 };

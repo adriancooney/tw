@@ -1,6 +1,6 @@
 import moment from "moment";
 import Promise from "bluebird";
-// import Actions, { LogAction } from "./action";
+import Actions, { LogAction } from "./action";
 import TeamworkAPI, { LoginError } from "./TeamworkAPI";
 import TeamworkParser from "./parser/TeamworkParser";
 import { Installation } from "./model/";
@@ -73,7 +73,9 @@ export default class Teamwork extends TeamworkAPI {
      */
     pushAction(action) {
         // Commit the action
-        return action.commit(this).finally(() => {
+        return action.commit(this).then((result) => {
+            return [action, result];
+        }).finally(() => {
             this.actions.done.push(action);
         });
     }

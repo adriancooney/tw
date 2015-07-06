@@ -1,26 +1,18 @@
 import TeamworkCLI from "../src/TeamworkCLI";
-
-const EXAMPLE_COMMIT_MSG = 
-`Log 2h to #2594400. Close https://chattest.teamwork.com/tasks/2298784. Other task #2298784.
-
-# Please enter the commit message for your changes. Lines starting
-# with '#' will be ignored, and an empty message aborts the commit.
-# On branch master
-# Your branch is up-to-date with 'origin/master'.
-#
-# Changes to be committed:
-#   modified:   src/TeamworkCLI.js
-#   modified:   src/hooks/commit-msg
-#
-# Untracked files:
-#   test/TeamworkCLI.js
-#
-`
+import { Person } from "../src/model";
 
 describe("TeamworkCLI", () => {
+    before(() => TeamworkCLI.config.set({
+        user: new Person({
+            id: 1234,
+            firstName: "Adrian",
+            lastName: "Teamwork"
+        });
+    }));
+
     describe(".expandCommitMessage(message)", () => {
         it("should expand commit message", () => {
-            return TeamworkCLI.expandCommitMessage(EXAMPLE_COMMIT_MSG).then((message) => {
+            return TeamworkCLI.processCommitMessage("Log 2h to #212412").then((message) => {
                 console.log(message);
             });
         });

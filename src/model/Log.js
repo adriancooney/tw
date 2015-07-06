@@ -13,7 +13,7 @@ export default class Log extends Model {
             minutes: true,
             hours: true,
             description: false,
-            date: [true, moment],
+            date: false,
             isBilled: false,
             author: Person,
             task: Task,

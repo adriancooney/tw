@@ -1,6 +1,11 @@
+import { notYetImplemented } from "./Debug";
+
 export default class Action {
-    constructor({ commit, undo }) {
-        this.commit = commit;
-        this.undo = undo;
+    commit() {
+        notYetImplemented(this.contructor.name, "commit");
+    }
+
+    undo() {
+        notYetImplemented(this.contructor.name, "undo");
     }
 }

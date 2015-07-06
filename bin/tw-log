@@ -101,7 +101,7 @@ TeamworkCLI.command(() => {
         // Actually log the time with the API
         // Take a minute to realize the beauty that is the Moment API.
         return [duration, item, api.log(item, user, Log.create(moment.duration(duration), moment().subtract(duration), message.trim()))];
-    }).spread((duration, item, log) => {
-        TeamworkCLI.log(log.description);
+    }).spread((duration, item, [log, result]) => {
+        TeamworkCLI.log(log.description());
     });
 });

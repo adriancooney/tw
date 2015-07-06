@@ -23,9 +23,9 @@ import Models, {
     Installation,
 } from "./model";
 
-import {
-    LogAction
-} from "./action";
+// import {
+//     LogAction
+// } from "./action";
 
 /**
  * The prefix before the "rc" files. e.g. .teamworkrc
@@ -213,8 +213,11 @@ export default class TeamworkCLI {
             Tasklist,
             Company,
             Installation,
-            LogAction,
-            Teamwork(data) { return new Teamwork(data.auth, data.installation, data.actions); },
+            // LogAction,
+            Teamwork: { 
+                serialize(api) { return { auth: api.auth, installation: api.installation.domain } },
+                deserialize(data) { return new Teamwork(data.auth, data.installation, data.actions); }
+            },
             moment: {
                 serialize(date) {
                     return date.toJSON();
@@ -246,16 +249,6 @@ export default class TeamworkCLI {
             var api = TeamworkCLI.config.get("api");
 
             if(!api) throw new CLIError("Not logged in. Please login.");
-
-            // Overwrite the request method so that
-            // we can set the loading state of the CLI
-            var self = this, request = TeamworkAPI.request;
-            TeamworkAPI.request = function() {
-                self.loading(true);
-                return request.apply(this, arguments).finally(() => {
-                    self.loading(false);
-                });
-            };
 
             return api;
         });
@@ -467,6 +460,16 @@ export class CLIError extends Error {
         this.code = code;
     }
 }
+
+// Overwrite the request method so that
+// we can set the loading state of the CLI
+var _request = TeamworkAPI.request;
+TeamworkAPI.request = function() {
+    TeamworkCLI.loading(true);
+    return _request.apply(this, arguments).finally(() => {
+        TeamworkCLI.loading(false);
+    });
+};
 
 /*
  * Override any toString to add some color and frills

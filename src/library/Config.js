@@ -30,7 +30,7 @@ export default class Config {
                     return new Date(string);
                 }
             }
-        })
+        });
 
         if(config) {
             debug("unpacking config");
@@ -97,16 +97,22 @@ export default class Config {
 
             if(Config.isInstance(object)) {
                 className = object.constructor.name
-                var type = this.getType(className);
+                var type = this.getType(className),
+                    serialized;
 
                 debug("packing %s", className);
 
                 if(type && type instanceof Object && type.serialize) {
-                    debug("serializing %s", className);
-                    return {
-                        className,
-                        serialized: type.serialize(object)
-                    }
+                    debug("serializing %s (.serialize)", className);
+                    serialized = type.serialize(object);
+                } else if(type && Config.isClass(type)) {
+                    debug("serializing %s (.toJSON)", className);
+                    serialized = object.toJSON();
+                }
+
+                return {
+                    className,
+                    serialized
                 }
             }
 
@@ -151,7 +157,7 @@ export default class Config {
                 if(!type) throw new Error(`Unknown type ${object.className}.`);
 
                 if(typeof type === "object") return type.deserialize(unpacked.serialized);
-                else if(Config.isClass(type)) return new type(unpacked);
+                else if(Config.isClass(type)) return new type(unpacked.serialized);
                 else return type(unpacked);
             } else return unpacked;
         } else return object;

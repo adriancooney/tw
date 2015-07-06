@@ -21,7 +21,7 @@ TeamworkCLI.getAPI().then((api) => {
     return [task, api.getProjectByID(task.project.id), api.getTasklistByID(task.tasklist.id)];
 }).spread((task, project, tasklist) => {
     // Set them as the current items
-    return TeamworkCLI.set({
+    return TeamworkCLI.save({
         task, project, tasklist
     });
 }).then(() => {

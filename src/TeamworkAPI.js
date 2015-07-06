@@ -77,7 +77,7 @@ export default class TeamworkAPI {
      */
     static login(email, password, installation, api = TeamworkAPI) {
         // Allow passing on Installation object.
-        if(typeof installation === "string") installation = Teamwork.parseInstallation(installation);
+        if(typeof installation === "string") installation = Installation.parse(installation);
         else if(!(installation instanceof Installation)) throw new Error("Installation parameter must be a String or an Installation object.");
 
         return TeamworkAPI.request("POST", `https://${installation.domain}/launchpad/v1/login.json`, { 
@@ -106,7 +106,7 @@ export default class TeamworkAPI {
      * @return {Promise} -> {TeamworkAPI} Authenticate Teamwork API.
      */
     static loginWithAuth(auth, installation, api = TeamworkAPI) {
-        if(typeof installation === "string") installation = Teamwork.parseInstallation(installation);
+        if(typeof installation === "string") installation = Installation.parse(installation);
         else if(!(installation instanceof Installation)) throw new Error("installation parameter must be a String or an Installation object.");
 
         // Create the installation

@@ -2,7 +2,7 @@
 
 import TeamworkCLI from "../src/TeamworkCLI";
 
-TeamworkCLI.set({
+TeamworkCLI.save({
     project: null,
     tasklist: null,
     task: null

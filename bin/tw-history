@@ -7,11 +7,8 @@ program
     .description("View you history of actions.")
     .parse(process.argv);
 
-console.log(TeamworkCLI.config);
-
 TeamworkCLI.command(() => {
     return TeamworkCLI.getAPI().then((api) => {
-        console.log(api);
         api.actions.done.forEach((action) => {
             TeamworkCLI.log(`${action.description} ${TeamworkCLI.color.blue("(" + action.timestamp.fromNow() + ")")}`);
         });

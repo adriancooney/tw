@@ -1,6 +1,6 @@
 import moment from "moment";
 import Promise from "bluebird";
-import Actions, { LogAction } from "./action";
+// import Actions, { LogAction } from "./action";
 import TeamworkAPI, { LoginError } from "./TeamworkAPI";
 import TeamworkParser from "./parser/TeamworkParser";
 import { Installation } from "./model/";

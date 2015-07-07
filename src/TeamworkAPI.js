@@ -43,14 +43,15 @@ export default class TeamworkAPI {
      * @param {Object} options.headers The headers to send with the request.
      * @return {Promise} -> {Response}
      */
-    static request(method, url, data, { headers, qs } = {}) {
-        debug("%s %s %j", method, url, data);
+    static request(method, url, data, { headers, query } = {}) {
+        debug("%s %s Data[%j], QS[%j]", method, url, data, query);
         return new Promise((resolve, reject) => {
             request({
                 url, method,
                 json: true,
                 body: data,
-                qs, headers
+                qs: query,
+                headers
             }, (err, response, body) => {
                 if(err) throw err;
                 else {
@@ -68,12 +69,12 @@ export default class TeamworkAPI {
      * Make an authorized request to the Teamwork API.
      * @return {Promise} -> {Response}
      */
-    request(method, path, data, { qs } = {}) {
+    request(method, path, data, { query } = {}) {
         return TeamworkAPI.request(method, `http://${this.installation.domain}${path}`, data, { 
+            query,
             headers: {
                 "Cookie": `tw-auth=${this.auth}`
-            },
-            qs
+            }
         });
     }
 
@@ -252,7 +253,11 @@ export default class TeamworkAPI {
      * @return {Promise} -> {Array[Task]}
      */
     getTasksForTasklist(tasklist) {
-        return this.request("GET", `/tasklists/${tasklist.id}/tasks.json`).then(({ body, url }) => {
+        return this.request("GET", `/tasklists/${tasklist.id}/tasks.json`, null, {
+            query: {
+                nestSubTasks: 1
+            }
+        }).then(({ body, url }) => {
             return body["todo-items"].map((task) => {
                 task.domain = this.installation.domain;
                 return Task.fromAPI(task);
@@ -286,7 +291,7 @@ export default class TeamworkAPI {
      * @param  {Moment} options.to   The end date to get logs for.
      * @return {Promise} -> {Array[Log]}
      */
-    getLogs(scope, { user, page, sort, from, to }) {
+    getLogs(scope, { user, page, sort, from, to } = {}) {
         var url, query = {};
 
         // Sort out the scope of the request
@@ -305,7 +310,7 @@ export default class TeamworkAPI {
             query.totime = to.format("HH:mm");
         }
 
-        return this.request("GET", url, undefined, { qs: query }).then(({ body }) => {
+        return this.request("GET", url, undefined, { query }).then(({ body }) => {
             return (body["time-entries"] || []).map((entry) => {
                 return new Log({
                     id: parseInt(entry.id),

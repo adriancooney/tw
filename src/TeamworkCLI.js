@@ -60,6 +60,8 @@ export default class TeamworkCLI {
 
         // Read in the config
         TeamworkCLI.config = TeamworkCLI.readConfig();
+
+        process.on("uncaughException", TeamworkCLI.fail);
     }
 
     /**
@@ -263,13 +265,21 @@ export default class TeamworkCLI {
      */
     static chooseCurrentItem(list, message, type, items) {
         if(!list) {
+            var current = TeamworkCLI.getCurrent(type);
+
             return TeamworkCLI.prompt([{
                 type: "list",
                 message: message,
                 name: type,
                 choices: items.map((item) => {
+                    var str = item.toCLIString();
+
+                    // Highlight the current item
+                    if(current && item.id === current.id) 
+                        str = `${TeamworkCLI.color.yellow(str)} ${TeamworkCLI.color.blue("(current)")}`;
+
                     return {
-                        name: item.toCLIString(),
+                        name: str,
                         value: item
                     }
                 })
@@ -476,7 +486,7 @@ TeamworkAPI.request = function() {
 /*
  * Override any toString to add some color and frills
  */
-Log.prototype.toCLIString = function() { return `${TeamworkCLI.color.green(this.author.getNameInitialed())} logged ${TeamworkCLI.color.magenta(this.duration.humanize())} ${this.date.calendar()}.\n > ${this.description.split("\n").join("\n > ")}`; };
+Log.prototype.toCLIString = function() { return `${TeamworkCLI.color.green(this.author.getNameInitialed())} logged ${TeamworkCLI.color.magenta(this.duration.humanize())} ${this.date.calendar()}.\n${TeamworkCLI.indent(this.description, "    ")}`; };
 Project.prototype.toCLIString = function() { return `[#${this.id}] ${TeamworkCLI.color.underline(this.name)}`; };
 Tasklist.prototype.toCLIString = function() { return `[#${this.id}] ${TeamworkCLI.color.bold(this.name)}`; };
 Installation.prototype.toCLIString = function() { return `${TeamworkCLI.color.cyan(this.name)} (${this.domain})`; };

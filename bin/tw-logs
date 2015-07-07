@@ -9,44 +9,45 @@ import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
 import { Debug } from "../src/library/Debug";
 
 const debug = Debug("tw:cmd:log");
+TeamworkCLI.command(() => {
+    program
+        .arguments("<task> <timestamp>")
+        .option("-m, --message <message>", "Log time with a message")
+        .option("-d, --duration <duration>", "The duration of the log.")
+        .option("-t, --time <time>", "The time the log happened.")
+        .option("--date <date>", "The date of the time log.")
+        .option("--silent", "Don't prompt for a log message")
+        .parse(process.argv);
 
-program
-    .arguments("<task> <timestamp>")
-    .option("-m, --message <message>", "Log time with a message")
-    .option("-d, --duration <duration>", "The duration of the log.")
-    .option("-t, --time <time>", "The time the log happened.")
-    .option("--date <date>", "The date of the time log.")
-    .option("--silent", "Don't prompt for a log message")
-    .parse(process.argv);
+    return TeamworkCLI.getAPI().then((api) => {
+        var task = program.args[0];
 
-TeamworkCLI.getAPI().then((api) => {
-    return Promise.try(() => {
-        var task;
-
-        if(program.args[0]) {
+        if(task) {
             // Get the task ID
-            task = Teamwork.parseTask(program.args[0]);
+            task = Teamwork.parse("task", program.args[0]);
 
             // We have a task ID, let's get it. Supplied tasks
             // always have precedence over the current task.
-            return api.getTaskByID(task);
+            task = api.getTaskByID(task);
         } else {
             task = TeamworkCLI.getCurrent("task")
 
             if(!task) throw new CLIError("No specified or current task.");
-            else return task;
         }
-    }).then((task) => {
-        TeamworkCLI.log(task.toString());
+
+        return [api, task];
+    }).spread((api, task) => {
+        TeamworkCLI.log(task.toCLIString());
+
         return api.getLogs(task);
     }).then((logs) => {
         if(logs.length) {
             logs.forEach((log, i) => {
-                TeamworkCLI.log(`#${i + 1} ` + log.toString());
+                TeamworkCLI.log(`#${i + 1} ` + log.toCLIString());
             });
         } else {
             TeamworkCLI.log(TeamworkCLI.color.red("No time logged."));
         }
     });
-}).catch(TeamworkCLI.fail);
+});
 

@@ -44,6 +44,7 @@ export default class Task extends Model {
             hasReminders: false,
             loggedTime: false,
             estimatedTime: false,
+            subTasks: false,
             tasklist: Tasklist,
             project: Project,
             company: Company,
@@ -130,6 +131,10 @@ export default class Task extends Model {
                 firstName: task['responsible-party-firstname'],
                 lastName: task['responsible-party-lastname']
             }
+        }
+
+        if(task.subTasks) {
+            data.subTasks = task.subTasks.map(task => new Task(Task.fromAPI(task)));
         }
 
         if(task['predecessors']) {

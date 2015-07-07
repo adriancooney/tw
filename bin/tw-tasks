@@ -4,17 +4,50 @@ import program from "commander";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import TeamworkAPI from "../src/TeamworkAPI";
 
-program
-    .option("-l, --list", "Display tasks as a static list.")
-    .parse(process.argv);
+TeamworkCLI.command(() => {
+    program
+        .option("-l, --list", "Display tasks as a static list.")
+        .parse(process.argv);
 
-TeamworkCLI.getAPI().then((api) => {
-    var tasklist = TeamworkCLI.getCurrent("tasklist");
-    if(!tasklist) TeamworkCLI.fail(`No tasklist currently selected. Please select a tasklist with ${TeamworkCLI.color.green("tw tasklists")}.`);
+    return TeamworkCLI.getAPI().then((api) => {
+        var tasklist = TeamworkCLI.getCurrent("tasklist");
+        if(!tasklist) TeamworkCLI.fail(`No tasklist currently selected. Please select a tasklist with ${TeamworkCLI.color.green("tw tasklists")}.`);
 
-    return api.getTasks(tasklist);
-}).then((tasks) => {
-    return TeamworkCLI.chooseCurrentItem(program.list, "Tasks", "task", tasks);
-}).then(() => {
-    TeamworkCLI.log("Current task updated.");
-}).catch(TeamworkCLI.fail);
+        return api.getTasks(tasklist);
+    }).then((tasks) => {
+        // Flatten the task list
+        tasks = tasks.reduce((list, task) => {
+            list.push({ task, level: 0 });
+
+            if(task.subTasks) {
+                list = list.concat(task.subTasks.map((t) => { return { task: t, level: 1} }));
+            }
+
+            return list;
+        }, []);
+
+        if(!program.list) {
+            var current = TeamworkCLI.getCurrent("task");
+
+            return TeamworkCLI.prompt([{
+                type: "list",
+                message: "Tasks",
+                name: "task",
+                choices: tasks.map(({ task, level }) => {
+                    return {
+                        name: (level > 0 ? "   " : "") + task.toCLIString(),
+                        value: task
+                    }
+                })
+            }]).then((answers) => {
+                return TeamworkCLI.save(answers);
+            }).then(() => {
+                TeamworkCLI.log("Current task updated.");
+            });
+        } else {
+            tasks.forEach(({ task, level }) => {
+                TeamworkCLI.log((level > 0 ? "   " : "") + task.toCLIString());
+            });
+        }
+    });
+});

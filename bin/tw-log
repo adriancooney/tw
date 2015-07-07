@@ -20,7 +20,7 @@ TeamworkCLI.command(() => {
         .option("-e, --editor", "Open up the default editor to write the log message.")
         .option("-d, --duration <duration>", "The duration of the log.")
         .option("-t, --time <time>", "The time the log happened.")
-        .option("-F, --fill", "Use the time since your last log as the duration.")
+        .option("-F, --fill", "Log the time since your last log today.")
         .option("--date <date>", "The date of the time log.")
         .option("--silent", "Don't prompt for a log message.")
         .option("--project [project]", "Log the time to the specified or current project.")
@@ -131,7 +131,7 @@ TeamworkCLI.command(() => {
         else if(program.silent) message = "";
         else if(program.editor) {
             // Prompt for a message 
-            message = TeamworkCLI.promptWithEditor(`Logging ${duration.humanize()} to #${item.toString()}.\n${item.getURL()}`);
+            message = TeamworkCLI.promptWithEditor(`Logging ${duration.humanize()} to ${item.toString()}.\n${item.getURL()}`);
         } else {
             message = TeamworkCLI.prompt({
                 type: "input",

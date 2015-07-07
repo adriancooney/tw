@@ -61,7 +61,32 @@ export default class TeamworkCLI {
         // Read in the config
         TeamworkCLI.config = TeamworkCLI.readConfig();
 
+        // Handle uncaught exceptions
         process.on("uncaughException", TeamworkCLI.fail);
+
+        // Overwrite the request method so that
+        // we can set the loading state of the CLI
+        var _request = TeamworkAPI.request,
+            cache = TeamworkCLI.config.get("cache");
+
+        if(!cache) {
+            cache = TeamworkCLI.config.set("cache", {});
+        }
+
+        TeamworkAPI.request = function(method, url, data, { headers, query } = {}) {
+            // Set loading CLI to loading
+            TeamworkCLI.loading(true);
+
+            // Hash the incoming request
+            var hash = `${method}-${url}-{JSON.stringify({})}-${JSON.stringify(data)}`;
+
+            // Execute the request
+            return _request(method, url, data, { headers, query }).then((data) => {
+                return data;
+            }).finally(() => {
+                TeamworkCLI.loading(false);
+            });
+        };
     }
 
     /**
@@ -183,7 +208,7 @@ export default class TeamworkCLI {
      * @return {Promise}
      */
     static save(key, value) {
-        TeamworkCLI.config.set(key, value);
+        if(key) TeamworkCLI.config.set(key, value);
         return TeamworkCLI.writeConfig(TeamworkCLI.config);
     }
 
@@ -247,11 +272,25 @@ export default class TeamworkCLI {
      */
     static getAPI() {
         return Promise.try(() => {
+            // If we have a cached version, return it
+            if(TeamworkCLI.api) return TeamworkCLI.api;
+
             var api = TeamworkCLI.config.get("api");
 
             if(!api) throw new CLIError("Not logged in. Please login.");
 
-            return api;
+            return new Teamwork(api.auth, api.installation);
+        });
+    }
+
+    /**
+     * Set the current API deails.
+     * @param {TeamworkAPI} api The teamwork API.
+     */
+    static setAPI(api) {
+        TeamworkCLI.config.set("api", {
+            auth: api.auth,
+            installation: api.installation.domain
         });
     }
 
@@ -322,6 +361,15 @@ export default class TeamworkCLI {
                 case "task": return new Task(data); break;
             }
         }
+    }
+
+    /**
+     * Set the current model.
+     * @param {String} model    The name of the model.
+     * @param {Mixed} instance The instance of the model.
+     */
+    static setCurrent(model, instance) {
+        return TeamworkCLI.config.set(model, instance);
     }
 
     /**
@@ -472,16 +520,6 @@ export class CLIError extends Error {
         this.code = code;
     }
 }
-
-// Overwrite the request method so that
-// we can set the loading state of the CLI
-var _request = TeamworkAPI.request;
-TeamworkAPI.request = function() {
-    TeamworkCLI.loading(true);
-    return _request.apply(this, arguments).finally(() => {
-        TeamworkCLI.loading(false);
-    });
-};
 
 /*
  * Override any toString to add some color and frills

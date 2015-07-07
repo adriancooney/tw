@@ -9,83 +9,88 @@ import { Installation } from "../src/model/";
 
 const debug = Debug("tw:cmd:login");
 
-Promise.try(() => {
-    program
-        .option("-e, --email <email>", "Your Teamwork login email.", TeamworkCLI.validateInput.bind(null, Teamwork.validateEmail))
-        .option("-p, --password <password>", "Your Teamwork login password")
-        .option("-a, --auth <auth>", "Your Teamwork authorization key.")
-        .option("-i, --installation <installation>", "Your Teamwork installation address.", Installation.parse)
-        .parse(process.argv);
+TeamworkCLI.command(() => {
+    return Promise.try(() => {
+        program
+            .option("-e, --email <email>", "Your Teamwork login email.", TeamworkCLI.validateInput.bind(null, Teamwork.validateEmail))
+            .option("-p, --password <password>", "Your Teamwork login password")
+            .option("-a, --auth <auth>", "Your Teamwork authorization key.")
+            .option("-i, --installation <installation>", "Your Teamwork installation address.", Installation.parse)
+            .parse(process.argv);
 
-    var details = {};
+        var details = {};
 
-    if(!program.auth && !program.email && !program.password) {
-        // Prompt for login details
-        return TeamworkCLI.prompt([{
-            type: "input",
-            message: "Email",
-            name: "email",
-            validate: TeamworkCLI.inquirerValidateInput.bind(null, Teamwork.validateEmail)
-        }, {
-            type: "password",
-            message: "Password",
-            name: "password"
-        }]).then((answers) => {
-            details = answers;
+        if(!program.auth && !program.email && !program.password) {
+            // Prompt for login details
+            return TeamworkCLI.prompt([{
+                type: "input",
+                message: "Email",
+                name: "email",
+                validate: TeamworkCLI.inquirerValidateInput.bind(null, Teamwork.validateEmail)
+            }, {
+                type: "password",
+                message: "Password",
+                name: "password"
+            }]).then((answers) => {
+                details = answers;
 
-            // Find installations associated with the account
-            // and ask which one they want to pick
-            return Teamwork.getAccounts(answers.email.trim(), answers.password.trim());
-        }).then((installations) => {
-            if(!installations.length) throw new CLIError("No accounts found.");
+                // Find installations associated with the account
+                // and ask which one they want to pick
+                return Teamwork.getAccounts(answers.email.trim(), answers.password.trim());
+            }).then((installations) => {
+                if(!installations.length) throw new CLIError("No accounts found.");
 
-            // Ask them to pick their installation
-            return TeamworkCLI.prompt({
-                type: "list",
-                name: "installation",
-                message: "Installation",
-                choices: installations.map((installation) => {
-                    return {
-                        name: installation.toCLIString(),
-                        value: installation
-                    }
-                })
+                // Ask them to pick their installation
+                return TeamworkCLI.prompt({
+                    type: "list",
+                    name: "installation",
+                    message: "Installation",
+                    choices: installations.map((installation) => {
+                        return {
+                            name: installation.toCLIString(),
+                            value: installation
+                        }
+                    })
+                });
+            }).then((answers) => {
+                var installation = answers.installation;
+
+                // Login to the API
+                debug("Logging in from prompt: %s, %s", details.email, installation);
+                return Teamwork.login(details.email, details.password, installation);
             });
-        }).then((answers) => {
-            var installation = answers.installation;
-
-            // Login to the API
-            debug("Logging in from prompt: %s, %s", details.email, installation);
-            return Teamwork.login(details.email, details.password, installation);
-        });
-    } else {
-        // Ensure we have an installation
-        if(!program.installation) TeamworkCLI.fail(`The ${TeamworkCLI.color.blue("--installation")} option is required when logging in with a email/password or auth key.`);
-
-        // TODO: If passed in installation by command line, get the full installation details from the API
-        if(program.auth) {
-            // If were passed an Auth key, login with the auth key
-            debug("Logging in from passed auth key: %s, %s", program.auth, program.installation.domain);
-            return Teamwork.loginWithAuth(program.auth, program.installation);
-        } else if(program.email && program.password) {
-            // Login with passed details
-            debug("Logging via passed in credentials: %s, %s", program.email, program.installation.domain);
-            return Teamwork.login(program.email, program.password, program.installation.domain)
         } else {
-            throw new CLIError(`Please pass either a ${TeamworkCLI.color.blue("--auth")} key or a ${Teamwork.color.blue("--email")} and ${Teamwork.color.blue("--password")}.`);
+            // Ensure we have an installation
+            if(!program.installation) TeamworkCLI.fail(`The ${TeamworkCLI.color.blue("--installation")} option is required when logging in with a email/password or auth key.`);
+
+            // TODO: If passed in installation by command line, get the full installation details from the API
+            if(program.auth) {
+                // If were passed an Auth key, login with the auth key
+                debug("Logging in from passed auth key: %s, %s", program.auth, program.installation.domain);
+                return Teamwork.loginWithAuth(program.auth, program.installation);
+            } else if(program.email && program.password) {
+                // Login with passed details
+                debug("Logging via passed in credentials: %s, %s", program.email, program.installation.domain);
+                return Teamwork.login(program.email, program.password, program.installation.domain)
+            } else {
+                throw new CLIError(`Please pass either a ${TeamworkCLI.color.blue("--auth")} key or a ${Teamwork.color.blue("--email")} and ${Teamwork.color.blue("--password")}.`);
+            }
         }
-    }
-}).then((api) => {
-    // Save the details and auth key to their user config
-    return api.getProfile().then((profile) => {
-        // Save the profile
-        return TeamworkCLI.save({
-            user: profile,
-            api: api,
-            installation: api.installation
+    }).then((api) => {
+        // Save the details and auth key to their user config
+        return api.getProfile().then((profile) => {
+            // Save the profile and installation
+            TeamworkCLI.setCurrent("user", profile);
+            TeamworkCLI.setCurrent("installation", api.installation);
+
+            // Save the API
+            TeamworkCLI.setAPI(api);
+
+            // Write the config
+            return TeamworkCLI.save();
         });
+    }).then(() => {
+        var user = TeamworkCLI.config.get("user");
+        TeamworkCLI.log(`Successfully logged in. Welcome back ${user.name}.`);
     });
-}).then(() => {
-    var user = TeamworkCLI.config.get("user");
-    TeamworkCLI.log(`Successfully logged in. Welcome back ${user.name}.`);
-}).catch(TeamworkCLI.fail);
+});

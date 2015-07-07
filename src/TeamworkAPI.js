@@ -305,8 +305,6 @@ export default class TeamworkAPI {
             query.totime = to.format("HH:mm");
         }
 
-        console.log(query);
-
         return this.request("GET", url, undefined, { qs: query }).then(({ body }) => {
             return (body["time-entries"] || []).map((entry) => {
                 return new Log({

@@ -37,16 +37,20 @@ export default class TeamworkAPI {
 
     /**
      * Make an unauthenticated request to the Teamwork API.
+     * @param {String} method The HTTP method.
+     * @param {String|Object} url The url string or { url {String}, query {Object} }
+     * @param {Object} data The JSON body of the request.
+     * @param {Object} options.headers The headers to send with the request.
      * @return {Promise} -> {Response}
      */
-    static request(method, url, data, { headers } = {}) {
+    static request(method, url, data, { headers, qs } = {}) {
         debug("%s %s %j", method, url, data);
         return new Promise((resolve, reject) => {
             request({
                 url, method,
                 json: true,
                 body: data,
-                headers
+                qs, headers
             }, (err, response, body) => {
                 if(err) throw err;
                 else {
@@ -64,11 +68,12 @@ export default class TeamworkAPI {
      * Make an authorized request to the Teamwork API.
      * @return {Promise} -> {Response}
      */
-    request(method, path, data) {
+    request(method, path, data, { qs } = {}) {
         return TeamworkAPI.request(method, `http://${this.installation.domain}${path}`, data, { 
             headers: {
                 "Cookie": `tw-auth=${this.auth}`
-            }
+            },
+            qs
         });
     }
 
@@ -273,11 +278,36 @@ export default class TeamworkAPI {
 
     /**
      * Get time logs for a task.
-     * @param  {Task} task 
+     * @param  {Project|Task} scope The task, project or optionally, neither (i.e. installation wide)
+     * @param  {User} options.user Get only time logs for a specific user (optional).
+     * @param  {Number} options.page The page number (defaults to 1)
+     * @param  {String} options.sort "ASC"|"DESC"
+     * @param  {Moment} options.from The start date to get logs for.
+     * @param  {Moment} options.to   The end date to get logs for.
      * @return {Promise} -> {Array[Log]}
      */
-    getLogs(task) {
-        return this.request("GET", `/todo_items/${task.id}/time_entries.json`).then(({ body }) => {
+    getLogs(scope, { user, page, sort, from, to }) {
+        var url, query = {};
+
+        // Sort out the scope of the request
+        if(scope instanceof Task) url = `/todo_items/${scope.id}/time_entries.json`;
+        else if(scope instanceof Project) url = `/projects/${scope.id}/time_entries.json`;
+        else url = `/time_entries.json`;
+
+        // Sort out the parameters
+        if(user) query.userId = user.id;
+        if(page) query.page = page;
+        if(sort) query.sort = sort;
+        if(from && to) {
+            query.fromdate = from.format("YYYYMMDD");
+            query.fromtime = from.format("HH:mm");
+            query.todate = to.format("YYYYMMDD");
+            query.totime = to.format("HH:mm");
+        }
+
+        console.log(query);
+
+        return this.request("GET", url, undefined, { qs: query }).then(({ body }) => {
             return (body["time-entries"] || []).map((entry) => {
                 return new Log({
                     id: parseInt(entry.id),

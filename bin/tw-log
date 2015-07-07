@@ -26,8 +26,8 @@ TeamworkCLI.command(() => {
         .option("--project [project]", "Log the time to the specified or current project.")
         .parse(process.argv);
 
-    // Ensure we have *at least* a duration
-    if(program.args.length === 0) throw new CLIError(`Please provide a ${TeamworkCLI.color.blue("<duration>")}.`);
+    // Ensure we have *at least* a duration or --fill
+    if(program.args.length === 0 && !program.duration && !program.fill) throw new CLIError(`Please provide a ${TeamworkCLI.color.blue("<duration>")}.`);
 
     return TeamworkCLI.getAPI().then((api) => {
         var item;
@@ -66,16 +66,64 @@ TeamworkCLI.command(() => {
 
         return [api, item];
     }).spread((api, item) => {
-        // We have out task/project, now let's parse out duration.
-        var duration = program.duration || program.args[1] || program.args[0];
+        if(program.fill) {
+            // The user asks us to fill the time since the last
+            // time entry. It only does it for the current project
+            // and if it's within the last day so we don't go
+            // filling in weeks
+            var currentProject = TeamworkCLI.getCurrent("project"),
+                currentUser = TeamworkCLI.getCurrent("user");
 
-        if(!duration) throw new CLIError("Please supply a task or duration to log.");
+            return api.getLogs(currentProject, { 
+                user: currentUser, 
+                // TODO: Allow custom start of day to be input
+                // Get logs since today at 8:00AM
+                from: moment().startOf("day").subtract(4, "hour"),
+                to: moment()
+            }).then((logs) => {
+                // Get the lastest time
+                var [timestamp, log] = logs.reduce(([lastTimestamp, lastLog], currentLog) => {
+                    // Get the log start date and add it's duration
+                    var currentTimestamp = moment(currentLog.date).add(currentLog.duration);
 
-        // Parse the duration
-        duration = moment.duration(Teamwork.parse("duration", duration));
+                    // If this is the first (or only), just return it
+                    if(!lastTimestamp) return [currentTimestamp, currentLog];
 
-        return [api, item, duration];
-    }).spread((api, item, duration) => {
+                    // If it's after the lastest timestamp, it is now the new latest
+                    if(currentTimestamp.isAfter(lastTimestamp)) return [currentTimestamp, currentLog];
+                    else return [lastTimestamp, lastLog];
+                }, []);
+
+                // If we have no log today, cop out!
+                if(!log) throw new CLIError(`No recent time logs today. ${TeamworkCLI.color.blue("--fill")} will only fill since you last time log today (starting at 8:00am).`);
+
+                var diff = moment().diff(timestamp, "m");
+
+                // Check to make sure we actually have a time and it's greater than at *least* five minutes
+                if(diff < 5) throw new CLIError(`Your last log was ${timestamp.fromNow()}. It must be at least 5 minutes since your last log. Come on now, don't be silly.`);
+
+                var offset = timestamp, duration = moment.duration(diff, "m");
+
+                return [api, item, duration, offset];
+            });
+        } else {
+            // We have out task/project, now let's parse out duration.
+            var duration = program.duration || program.args[1] || program.args[0];
+
+            if(!duration) throw new CLIError("Please supply a task or duration to log.");
+
+            // Parse the duration. This will fail if it's invaild.
+            duration = Teamwork.parse("duration", duration);
+
+            // Create the moment object
+            duration = moment.duration(duration);
+
+            // And the offset
+            var offset = moment().subtract(duration);
+
+            return [api, item, duration, offset];
+        }
+    }).spread((api, item, duration, offset) => {
         var message;
 
         // Get the message for the timelog
@@ -94,14 +142,14 @@ TeamworkCLI.command(() => {
             });
         }
 
-        return [api, item, duration, message]
-    }).spread((api, item, duration, message) => {
+        return [api, item, duration, offset, message]
+    }).spread((api, item, duration, offset, message) => {
         var user = TeamworkCLI.getCurrent("user");
 
         // Actually log the time with the API
         // Take a minute to realize the beauty that is the Moment API.
-        return [duration, item, api.log(item, user, Log.create(moment.duration(duration), moment().subtract(duration), message.trim()))];
-    }).spread((duration, item, [log, result]) => {
+        return api.log(item, user, Log.create(moment.duration(duration), offset, message.trim()));
+    }).spread((log, result) => {
         TeamworkCLI.log(log.description());
     });
 });

@@ -2,8 +2,7 @@
 
 import program from "commander";
 import config from "../package.json";
-
-// TODO: Make every command use commander so --help works.
+import TeamworkCLI from "../src/TeamworkCLI";
 
 program
     .version(config.version)

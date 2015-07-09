@@ -1,3 +1,7 @@
+# Quick Fixes
+[ ] DOC: Add `tw-status` example in README.md.
+
+# Features
 [ ] Instead of configuration serialization, use a cache and only save trivial pieces
     of information that allow you to recreate the request.
 [ ] Check for updates when you `tw-status` on the current task.
@@ -7,6 +11,8 @@
 [ ] `tw open --project [project]` - Open the (current) project in the browser.
 [ ] `tw status --refresh` - Refresh the current task to see updates.
 [ ] `tw task --link` - Print the link to the current task.
-
 [X] Hierarchal view for sub-tasks in a task with `tw-tasks`.
 [X] Highlight current items in lists.
+
+# Bug Fixes
+[ ] Automatically login user if they only have one account.

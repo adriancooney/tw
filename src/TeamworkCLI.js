@@ -7,6 +7,7 @@ import rc from "rc";
 import moment from "moment";
 import tmpdir from "os-tmpdir";
 import editor from "editor";
+import commander from "commander";
 import Teamwork from "./Teamwork";
 import { Debug } from "./library/Debug";
 import Config from "./library/Config";
@@ -48,6 +49,8 @@ const PRIORITY_COLORS = {
     "medium": "magenta" // I know the website uses yellow but tasks are yellow.
 };
 
+const REPORTER = "default";
+
 // Promisify fs
 Promise.promisifyAll(fs);
 
@@ -58,35 +61,25 @@ export default class TeamworkCLI {
         // Export handy acces to Chalk
         TeamworkCLI.color = chalk;
 
-        // Read in the config
-        TeamworkCLI.config = TeamworkCLI.readConfig();
-
         // Handle uncaught exceptions
         process.on("uncaughException", TeamworkCLI.fail);
 
         // Overwrite the request method so that
         // we can set the loading state of the CLI
-        var _request = TeamworkAPI.request,
-            cache = TeamworkCLI.config.get("cache");
+        var request = TeamworkAPI.request;
 
-        if(!cache) {
-            cache = TeamworkCLI.config.set("cache", {});
-        }
-
-        TeamworkAPI.request = function(method, url, data, { headers, query } = {}) {
+        TeamworkAPI.request = function() {
             // Set loading CLI to loading
             TeamworkCLI.loading(true);
 
-            // Hash the incoming request
-            var hash = `${method}-${url}-{JSON.stringify({})}-${JSON.stringify(data)}`;
-
             // Execute the request
-            return _request(method, url, data, { headers, query }).then((data) => {
-                return data;
-            }).finally(() => {
+            return request.apply(null, arguments).finally(() => {
                 TeamworkCLI.loading(false);
             });
         };
+
+        // Require the reporter
+        require(`./reporter/${REPORTER}`);
     }
 
     /**
@@ -498,6 +491,9 @@ export default class TeamworkCLI {
      * @return {Promise}            
      */
     static command(callback) {
+        // Read in the config
+        TeamworkCLI.config = TeamworkCLI.readConfig();
+
         return Promise.try(callback).then(() => {
             // Save the config
             return TeamworkCLI.writeConfig(TeamworkCLI.config);
@@ -520,28 +516,3 @@ export class CLIError extends Error {
         this.code = code;
     }
 }
-
-/*
- * Override any toString to add some color and frills
- */
-Log.prototype.toCLIString = function() { return `${TeamworkCLI.color.green(this.author.getNameInitialed())} logged ${TeamworkCLI.color.magenta(this.duration.humanize())} ${this.date.calendar()}.\n${TeamworkCLI.indent(this.description, "    ")}`; };
-Project.prototype.toCLIString = function() { return `[#${this.id}] ${TeamworkCLI.color.underline(this.name)}`; };
-Tasklist.prototype.toCLIString = function() { return `[#${this.id}] ${TeamworkCLI.color.bold(this.name)}`; };
-Installation.prototype.toCLIString = function() { return `${TeamworkCLI.color.cyan(this.name)} (${this.domain})`; };
-
-Task.prototype.toCLIString = function(detailed = true){
-    var details = [];
-    details.push(this.getProgress())
-
-    if(detailed) {
-        if(this.assigned) details.push(TeamworkCLI.color.green(this.assigned.getNameInitialed()));
-        if(this.priority) {
-            var color = PRIORITY_COLORS[this.priority];
-            details.push(color ? TeamworkCLI.color[color](this.priority) : this.priority);
-        }
-    }
-
-    details = details.join(", ");
-
-    return `[#${this.id}] ${TeamworkCLI.color.yellow(this.title)} (${details})`
-};

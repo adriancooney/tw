@@ -7,6 +7,10 @@
    [ ] Person's name
    [ ] Installation
 
+# Git integration
+[ ] Updating progress.
+[ ] Closing task.
+
 # Quick Fixes
 [ ] DOC: Add `tw-status` example in README.md.
 

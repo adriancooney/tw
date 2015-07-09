@@ -101,7 +101,19 @@ A time unit is like you would see on a 24 hour digital clock, with a colon separ
 A date unit is in the form of `dd/mm/yyyy`. Examples: `31/03/1994` is 31st March 1994. Other date strings accepted are `yesterday` and `today`.
 
 
-### API Interface
+## Git Integration
+Packaged with `tw` is git integration and to install, it's just one command. Navigate to your git repository and run `git-install-hooks`.
 
-### Development
-To run the development version of `tw`, you need to add the `bin` folder to your path and run it using `twd`.
+    $ cd my-git-repository/
+    $ tw install-hooks
+    Copying hooks into the current git repository.
+    > commit-msg
+    $ chmod 0755 .git/hooks/commit-msg
+    > post-commit
+    $ chmod 0755 .git/hooks/post-commit
+
+Git integration works by looking at your commit messages and allows you to some cool interactions with Teamwork Projects. It will expand task IDs right in the commit to give some context and updates Teamwork accordingly. So far, you can log time but updating progress and closing tasks is in the pipeline. Some example commit messages:
+
+> Log 2h30m to #12312421
+
+> Completed 30m to http://digitalcrew.teamwork.com/tasks/472997.

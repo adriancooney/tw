@@ -3,11 +3,12 @@
 import program from "commander";
 import TeamworkCLI from "../src/TeamworkCLI";
 
-program
-    .description("View you history of actions.")
-    .parse(process.argv);
 
 TeamworkCLI.command(() => {
+    program
+        .description("View you history of actions.")
+        .parse(process.argv);
+        
     return TeamworkCLI.getAPI().then((api) => {
         api.actions.done.forEach((action) => {
             TeamworkCLI.log(`${action.description} ${TeamworkCLI.color.blue("(" + action.timestamp.fromNow() + ")")}`);

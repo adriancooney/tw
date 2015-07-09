@@ -1,15 +1,44 @@
+import inquirer from "inquirer";
 import commander from "commander";
 import chalk from "chalk";
 import {
     Log, Project, Tasklist, Installation, Task
 } from "../model";
 
+/**
+ * Simple store of colors for priority.
+ * @type {Object}
+ */
+const PRIORITY_COLORS = {
+    "high": "red",
+    "medium": "magenta" // I know the website uses yellow but tasks are yellow.
+};
+
+/*
+ * Override Inquirer's prompt.
+ */
+var getQuestion = function() {
+    var message = chalk.bold(this.opt.message) + ": ";
+
+    // Append the default if available, and if question isn't answered
+    if ( this.opt.default != null && this.status !== "answered" ) {
+        message += chalk.dim("("+ this.opt.default + ") ");
+    }
+
+    return message;
+};
+
+inquirer.prompt.prompts.list.prototype.getQuestion = getQuestion;
+inquirer.prompt.prompts.input.prototype.getQuestion = getQuestion;
+inquirer.prompt.prompts.password.prototype.getQuestion = getQuestion;
+
 /*
  * Models
  */
 Log.prototype.toCLIString = function() { 
     return `${chalk.green(this.author.getNameInitialed())} ` + 
-        `logged ${chalk.magenta(this.duration.humanize())} ${this.date.calendar()}.\n${indent(this.description, "    ")}`; 
+        `logged ${chalk.magenta(this.duration.humanize())} on ${this.date.calendar()}.` +
+        (this.description ? `\n${indent(this.description, "    ")}` : '');
 };
 
 Project.prototype.toCLIString = function() { 
@@ -38,7 +67,7 @@ Task.prototype.toCLIString = function(detailed = true){
 
     details = details.join(", ");
 
-    return `[#${this.id}] ${chalk.yellow(this.title)} (${details})`
+    return `[#${this.id}] ${this.title} (${details})`
 };
 
 /*

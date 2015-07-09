@@ -3,8 +3,10 @@ import { Debug } from "./Debug";
 const debug = Debug("tw:config");
 
 export default class Config {
-    constructor() {
+    constructor(config) {
         this.config = {};
+
+        this.set(config);
     }
 
     /**

@@ -3,12 +3,14 @@
 import Path from "path";
 import Promise from "bluebird";
 import fs from "fs";
-import TeamworkCLI from "../src/TeamworkCLI";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 
-Promise.try(() => {
-    var configPath = TeamworkCLI.getConfigPath();
-    fs.unlinkSync(configPath);
-    TeamworkCLI.log(`Removed ${configPath}.`);
-}).catch(() => {
-    TeamworkCLI.log("No config files to remove.");
+TeamworkCLI.command(() => {
+    return Promise.try(() => {
+        var configPath = TeamworkCLI.getConfigPath();
+        fs.unlinkSync(configPath);
+        TeamworkCLI.log(`Removed ${TeamworkCLI.color.red(configPath)}`);
+    }).catch(() => {
+        throw new CLIError("No config files to remove.");
+    });
 });

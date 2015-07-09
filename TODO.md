@@ -1,3 +1,12 @@
+# High level TODOs
+[ ] Establish styles and conventions for output:
+   [ ] Task (ID, title)
+   [ ] Tasklist (ID, title)
+   [ ] Project (ID, title)
+   [ ] Number in a list
+   [ ] Person's name
+   [ ] Installation
+
 # Quick Fixes
 [ ] DOC: Add `tw-status` example in README.md.
 
@@ -11,8 +20,14 @@
 [ ] `tw open --project [project]` - Open the (current) project in the browser.
 [ ] `tw status --refresh` - Refresh the current task to see updates.
 [ ] `tw task --link` - Print the link to the current task.
+[ ] Enable pagination in time logs in `tw-logs`.
+[ ] Allow viewing logs for a project with `tw-logs --project [project]`.
+[ ] **Create a task.**
 [X] Hierarchal view for sub-tasks in a task with `tw-tasks`.
 [X] Highlight current items in lists.
+
+### `tw-tasks`
+[ ] Sort by assigned `tw tasks --assigned`
 
 # Bug Fixes
 [ ] Automatically login user if they only have one account.

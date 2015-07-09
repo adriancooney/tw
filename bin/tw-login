@@ -91,6 +91,6 @@ TeamworkCLI.command(() => {
         });
     }).then(() => {
         var user = TeamworkCLI.config.get("user");
-        TeamworkCLI.log(`Successfully logged in. Welcome back ${user.name}.`);
+        TeamworkCLI.log(`Successfully logged in. Welcome back ${TeamworkCLI.color.green(user.getNameInitialed())}`);
     });
 });

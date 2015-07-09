@@ -3,27 +3,28 @@
 import program from "commander";
 import Teamwork from "../src/Teamwork";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
-import TeamworkAPI from "../src/TeamworkAPI";
 
-program
-    .arguments("<task>")
-    .parse(process.argv);
+TeamworkCLI.command(() => {
+    program
+        .arguments("<task>")
+        .parse(process.argv);
 
-TeamworkCLI.getAPI().then((api) => {
-    if(!program.args.length) throw new CLIError(`Please supply a ${TeamworkCLI.color.blue("<task>")}.`);
+    return TeamworkCLI.getAPI().then((api) => {
+        if(!program.args.length) throw new CLIError(`Please supply a ${TeamworkCLI.color.blue("<task>")}.`);
 
-    // Parse the inputted task
-    var task = Teamwork.parseTask(program.args[0]);
-    
-    return [api, api.getTaskByID(task)];
-}).spread((api, task) => {
-    // Grab the project and tasklist
-    return [task, api.getProjectByID(task.project.id), api.getTasklistByID(task.tasklist.id)];
-}).spread((task, project, tasklist) => {
-    // Set them as the current items
-    return TeamworkCLI.save({
-        task, project, tasklist
+        // Parse the inputted task
+        var task = Teamwork.parse("task", program.args[0]);
+        
+        return [api, api.getTaskByID(task)];
+    }).spread((api, task) => {
+        // Grab the project and tasklist
+        return [task, api.getProjectByID(task.project.id), api.getTasklistByID(task.tasklist.id)];
+    }).spread((task, project, tasklist) => {
+        // Set them as the current items
+        return TeamworkCLI.save({
+            task, project, tasklist
+        });
+    }).then(() => {
+        TeamworkCLI.log("Current task updated.");
     });
-}).then(() => {
-    TeamworkCLI.log("Current task updated.");
-}).catch(TeamworkCLI.fail);
+});

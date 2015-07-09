@@ -2,10 +2,12 @@
 
 import TeamworkCLI from "../src/TeamworkCLI";
 
-TeamworkCLI.save({
-    project: null,
-    tasklist: null,
-    task: null
+TeamworkCLI.command(() => {
+    return TeamworkCLI.save({
+        project: null,
+        tasklist: null,
+        task: null
+    }).then(() => {
+        TeamworkCLI.log("Status cleared.");
+    });
 });
-
-TeamworkCLI.log("Status cleared.");

@@ -41,14 +41,9 @@ const TEAMWORK_RC_PREFIX = "teamwork";
 const LOADER = ["|", "/", "-", "\\", "|", "/", "-", "\\"];
 
 /**
- * Simple store of colors for priority.
- * @type {Object}
+ * The default pretty color outputter.
+ * @type {String}
  */
-const PRIORITY_COLORS = {
-    "high": "red",
-    "medium": "magenta" // I know the website uses yellow but tasks are yellow.
-};
-
 const REPORTER = "default";
 
 // Promisify fs
@@ -224,29 +219,7 @@ export default class TeamworkCLI {
      * @return {Object} Config.
      */
     static readConfig() {
-        return new Config({
-            Log,
-            Tag,
-            Task,
-            Person,
-            Project,
-            Tasklist,
-            Company,
-            Installation,
-            Teamwork: { 
-                serialize(api) { return { auth: api.auth, installation: api.installation.domain } },
-                deserialize(data) { return new Teamwork(data.auth, data.installation, data.actions); }
-            },
-            moment: {
-                serialize(date) {
-                    return date.toJSON();
-                },
-
-                deserialize(str) {
-                    return moment(str);
-                }
-            }
-        }, rc(TEAMWORK_RC_PREFIX, {}, () => {}));
+        return new Config(rc(TEAMWORK_RC_PREFIX, {}, () => {}));
     }
 
     /**
@@ -493,6 +466,7 @@ export default class TeamworkCLI {
     static command(callback) {
         // Read in the config
         TeamworkCLI.config = TeamworkCLI.readConfig();
+        debug("Reading in config:", TeamworkCLI.config);
 
         return Promise.try(callback).then(() => {
             // Save the config

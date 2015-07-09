@@ -9,14 +9,11 @@ import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
 import { Debug } from "../src/library/Debug";
 
 const debug = Debug("tw:cmd:log");
+
 TeamworkCLI.command(() => {
     program
-        .arguments("<task> <timestamp>")
-        .option("-m, --message <message>", "Log time with a message")
-        .option("-d, --duration <duration>", "The duration of the log.")
-        .option("-t, --time <time>", "The time the log happened.")
-        .option("--date <date>", "The date of the time log.")
-        .option("--silent", "Don't prompt for a log message")
+        .arguments("[task]")
+        .option("-p, --project", "View the time logs the current project.")
         .parse(process.argv);
 
     return TeamworkCLI.getAPI().then((api) => {
@@ -30,6 +27,7 @@ TeamworkCLI.command(() => {
             // always have precedence over the current task.
             task = api.getTaskByID(task);
         } else {
+            // Tet the current task
             task = TeamworkCLI.getCurrent("task")
 
             if(!task) throw new CLIError("No specified or current task.");
@@ -37,13 +35,15 @@ TeamworkCLI.command(() => {
 
         return [api, task];
     }).spread((api, task) => {
+        // Log the task were getting the logs forr
         TeamworkCLI.log(task.toCLIString());
 
+        // Get the tasks
         return api.getLogs(task);
     }).then((logs) => {
         if(logs.length) {
             logs.forEach((log, i) => {
-                TeamworkCLI.log(`#${i + 1} ` + log.toCLIString());
+                TeamworkCLI.log(`[#${i + 1}] ` + log.toCLIString() + "\n");
             });
         } else {
             TeamworkCLI.log(TeamworkCLI.color.red("No time logged."));

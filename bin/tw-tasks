@@ -35,7 +35,7 @@ TeamworkCLI.command(() => {
                 name: "task",
                 choices: tasks.map(({ task, level }) => {
                     return {
-                        name: (level > 0 ? "   " : "") + task.toCLIString(),
+                        name: (level > 0 ? " |- " : "") + task.toCLIString(),
                         value: task
                     }
                 })

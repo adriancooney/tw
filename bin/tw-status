@@ -17,7 +17,7 @@ TeamworkCLI.command(() => {
 
     TeamworkCLI.log(
     `${userString || "Not logged in."}
-     ${TeamworkCLI.color.blue("Project:")} ${currentProject ? currentProject.toCLIString() : "None"}
-    ${TeamworkCLI.color.blue("Tasklist:")} ${currentTasklist ? currentTasklist.toCLIString() : "None"}
-        ${TeamworkCLI.color.blue("Task:")} ${currentTask ? currentTask.toCLIString() : "None"}`)
+  ${TeamworkCLI.color.blue("Project:")} ${currentProject ? currentProject.toCLIString() : "None"}
+ ${TeamworkCLI.color.blue("Tasklist:")} ${currentTasklist ? currentTasklist.toCLIString() : "None"}
+     ${TeamworkCLI.color.blue("Task:")} ${currentTask ? currentTask.toCLIString() : "None"}`)
 });

@@ -5,7 +5,7 @@ This is the home of the Teamwork CLI tool source and a Javascript API interface.
 #### `tw`
 To get started with `tw`, you must have [Node.js](http://nodejs.org) installed on your machine the install `tw` via npm:
     
-    $ npm install -g tw
+    $ npm install -g tw-beta
 
 Once `tw` is installed, you must now log in and pick your installation:
 

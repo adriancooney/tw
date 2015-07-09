@@ -12,4 +12,4 @@
 #      [#124124] Fix SVG's in IE and firefox (80%, Adrian C., high)
 #      http://digitalcrew.teamwork.com/tasks/124124
 # 
-DEBUG=tw* tw hook-commit-msg $1
+tw hook-commit-msg $1

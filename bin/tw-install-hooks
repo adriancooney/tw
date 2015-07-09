@@ -3,39 +3,45 @@
 import fs from "fs";
 import Path from "path";
 import Promise from "bluebird";
-import TeamworkCLI from "../src/TeamworkCLI";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 
 Promise.promisifyAll(fs);
 
-var gitRepo = Path.resolve(process.env.PWD, ".git");
+TeamworkCLI.command(() => {
+    var gitRepo = Path.resolve(process.env.PWD, ".git");
 
-Promise.try(() => {
-    // Check if the current directory is a git repository
-    return fs.statAsync(gitRepo);
-}).then((stat) => {
-    var hooksPath = Path.resolve(__dirname, "../src/hooks"),
-        gitHooksPath = Path.join(gitRepo, "hooks");
+    return Promise.try(() => {
+        // Check if the current directory is a git repository
+        return fs.statAsync(gitRepo);
+    }).then((stat) => {
+        var hooksPath = Path.resolve(__dirname, "../src/hooks"),
+            gitHooksPath = Path.join(gitRepo, "hooks");
 
-    TeamworkCLI.log(`Copying hooks from ${hooksPath} to ${gitHooksPath}.`);
+        TeamworkCLI.log(`Copying hooks into the current git repository.`);
 
-    // Git directory, copy all the files in src/hooks into .git/hooks
-    return Promise.all(fs.readdirSync(hooksPath).map((hook) => {
-        TeamworkCLI.log(`> ${hook}`);
+        // Git directory, copy all the files in src/hooks into .git/hooks
+        return Promise.all(fs.readdirSync(hooksPath).map((hook) => {
+            return new Promise((resolve, reject) => {
+                var newHook = Path.join(gitHooksPath, hook);
 
-        return new Promise((resolve, reject) => {
-            var newHook = Path.join(gitHooksPath, hook);
+                TeamworkCLI.log(`> ${hook}`);
 
-            fs.createReadStream(Path.join(hooksPath, hook))
-                .pipe(fs.createWriteStream(newHook))
-                .on("end", () => {
-                    TeamworkCLI.log("$ chmod 0755 %s", newHook);
-                    fs.chmod(newHook, 0o755, (err) => {
-                        if(err) reject(err);
-                        else resolve();
-                    });
-                });
-        });
-    }));
-}).catch((err) => {
-    TeamworkCLI.fail("Current directory is not a git repository.");
+                // Write the hooks
+                fs.createReadStream(Path.join(hooksPath, hook))
+                    .pipe(fs.createWriteStream(newHook)
+                        .on("error", reject)
+                        .on("finish", () => {
+                            if(process.platform !== "win32") {
+                                TeamworkCLI.log("$ chmod 0755 %s", newHook);
+                                fs.chmod(newHook, 0o755, (err) => {
+                                    if(err) reject(err);
+                                    else resolve();
+                                });
+                            }
+                        }));
+            });
+        }));
+    }).catch((err) => {
+        throw new CLIError("Current directory is not a git repository.");
+    });
 });

@@ -1,5 +1,5 @@
 {
-  "name": "tw",
+  "name": "tw-beta",
   "version": "0.1.0",
   "description": "Teamwork Projects CLI and git integration.",
   "main": "build/src/TeamworkAPI.js",

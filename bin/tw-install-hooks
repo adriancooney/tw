@@ -1,26 +1,43 @@
 #!/usr/bin/env babel-node --
-
 import fs from "fs";
 import Path from "path";
 import Promise from "bluebird";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import { Debug } from "../src/library/Debug";
+
+const debug = Debug("tw:cmd:install-hooks");
 
 Promise.promisifyAll(fs);
 
 TeamworkCLI.command(() => {
-    var gitRepo = Path.resolve(process.env.PWD, ".git");
+    var gitRepo = Path.join(process.env.PWD, ".git"),
+        hooksPath = Path.resolve(__dirname, "../src/hooks"),
+        gitHooksPath = Path.join(gitRepo, "hooks");
+        
+    debug("git repo = %s", gitRepo);
 
     return Promise.try(() => {
         // Check if the current directory is a git repository
         return fs.statAsync(gitRepo);
     }).then((stat) => {
-        var hooksPath = Path.resolve(__dirname, "../src/hooks"),
-            gitHooksPath = Path.join(gitRepo, "hooks");
+
+        // Get the hooks
+        return fs.readdirAsync(hooksPath);
+    }).then((hooks) => {
+        TeamworkCLI.log("Teamwork git integration will overwrite the following git hooks: " + hooks.join(", "));
+        return [hooks, TeamworkCLI.prompt([{
+            type: "confirm",
+            name: "continue",
+            message: "Are you sure you wish to continue?"
+        }])];
+    }).spread((hooks, answers) => {
+        // If they don't want to continue, cop out
+        if(!answers.continue) throw new CLIError("Not installing, exiting.");
 
         TeamworkCLI.log(`Copying hooks into the current git repository.`);
 
         // Git directory, copy all the files in src/hooks into .git/hooks
-        return Promise.all(fs.readdirSync(hooksPath).map((hook) => {
+        return Promise.all(hooks.map((hook) => {
             return new Promise((resolve, reject) => {
                 var newHook = Path.join(gitHooksPath, hook);
 
@@ -42,6 +59,7 @@ TeamworkCLI.command(() => {
             });
         }));
     }).catch((err) => {
-        throw new CLIError("Current directory is not a git repository.");
+        if(err.code === "ENOENT") throw new CLIError("Current directory does not contain a git repository.");
+        else throw err;
     });
 });

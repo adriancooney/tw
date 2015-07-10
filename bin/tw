@@ -1,11 +1,10 @@
 #!/usr/bin/env babel-node --
 
 import program from "commander";
-import config from "../package.json";
 import TeamworkCLI from "../src/TeamworkCLI";
 
 program
-    .version(config.version)
+    .version("0.1.14")
     .command("status", "View current task, tasklist and project.")
     .command("projects", "View and select a project.")
     .command("tasklists [project]", "View and select a tasklist from the current project.")

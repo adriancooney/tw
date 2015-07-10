@@ -35,3 +35,8 @@
 
 # Bug Fixes
 [ ] Automatically login user if they only have one account.
+
+# Development Issues
+[ ] Force the package to get the version from the package.json. We don't do this
+    now because of a weird issue where we build, it copies the package.json and
+    npm doesn't like two package.jsons or something ridiculous like that.

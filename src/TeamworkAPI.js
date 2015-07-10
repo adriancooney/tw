@@ -1,10 +1,8 @@
 import Path from "path";
 import http from "http";
 import url from "url";
-import assert from "assert";
 import Promise from "bluebird";
 import request from "request";
-import Cookie, { Jar } from "cookie-jar";
 import { Debug } from "./library/Debug"
 import Teamwork from "./Teamwork";
 

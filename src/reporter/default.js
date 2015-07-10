@@ -42,11 +42,11 @@ Log.prototype.toCLIString = function() {
 };
 
 Project.prototype.toCLIString = function() { 
-    return `[#${this.id}] ${chalk.underline(this.name)}`; 
+    return `${chalk.underline(this.name)}` + (this.starred ? chalk.yellow(" ★") : ""); 
 };
 
 Tasklist.prototype.toCLIString = function() { 
-    return `[#${this.id}] ${chalk.bold(this.name)}`; 
+    return `${chalk.bold(this.name)}`; 
 };
 
 Installation.prototype.toCLIString = function() { 

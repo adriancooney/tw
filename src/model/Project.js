@@ -22,7 +22,8 @@ export default class Project extends Model {
             company: Company,
             tags: Tag,
             logo: false,
-            status: false
+            status: false,
+            starred: false
         }, data);
     }
 

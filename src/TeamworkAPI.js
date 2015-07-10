@@ -178,7 +178,8 @@ export default class TeamworkAPI {
                     status: project.status,
                     tags: project.tags,
                     createdAt: project['created-on'],
-                    logo: project.logo || null
+                    logo: project.logo || null,
+                    starred: project.starred
                 });
             });
         });
@@ -199,6 +200,7 @@ export default class TeamworkAPI {
                 createdAt: project['created-on'],
                 status: project.status,
                 description: project.description,
+                starred: project.starred,
                 category: {
                     id: parseInt(project.category.id),
                     name: project.name

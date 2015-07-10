@@ -10,6 +10,7 @@ program
     .command("tasklists [project]", "View and select a tasklist from the current project.")
     .command("tasks [tasklist]", "View and select a task from the current tasklist.")
     .command("task <task>", "Select a task by ID or URL.")
+    .command("info [task]", "Display info about a task.")
     .command("progress [task] <progress>", "Add progress to a task.")
     .command("log [task] <timestamp>", "Log time to a task or project.")
     .command("logs [task]", "Get the time logs for a task.")

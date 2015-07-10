@@ -1,0 +1,32 @@
+#!/usr/bin/env babel-node --
+
+import program from "commander";
+import Teamwork from "../src/Teamwork";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+
+TeamworkCLI.command(() => {
+    program
+        .description("Display info about a task.")
+        .arguments("[task]")
+        .option("--id", "Print the ID of the task.")
+        .option("--url", "Print the URL of the task.")
+        .parse(process.argv);
+
+    return TeamworkCLI.getAPI().then((api) => {
+        var task;
+
+        if(program.args.length) {
+            task = api.getTaskByID(Teamwork.parse("task", program.args[0]));
+        } else {
+            task = TeamworkCLI.getCurrent("task");
+
+            if(!task) throw new CLIError("No task specified or current task.");
+        }
+        
+        return task;
+    }).then((task) => {
+        if(program.id) TeamworkCLI.log("#" + task.id);
+        else if(program.url) TeamworkCLI.log(task.getURL());
+        else TeamworkCLI.log(task.toCLIString());
+    });
+});

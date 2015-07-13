@@ -47,7 +47,7 @@ TeamworkCLI.command(() => {
                     message: "Installation",
                     choices: installations.map((installation) => {
                         return {
-                            name: installation.toCLIString(),
+                            name: installation.print(),
                             value: installation
                         }
                     })

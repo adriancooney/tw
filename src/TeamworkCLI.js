@@ -24,10 +24,6 @@ import Models, {
     Installation,
 } from "./model";
 
-// import {
-//     LogAction
-// } from "./action";
-
 /**
  * The prefix before the "rc" files. e.g. .teamworkrc
  * @type {String}
@@ -277,7 +273,7 @@ export default class TeamworkCLI {
                 message: message,
                 name: type,
                 choices: items.map((item) => {
-                    var str = item.toCLIString();
+                    var str = item.print();
 
                     // Highlight the current item
                     if(current && item.id === current.id) 
@@ -294,7 +290,7 @@ export default class TeamworkCLI {
         } else {
             return Promise.try(() => {
                 items.forEach((item) => {
-                    TeamworkCLI.log(item.toCLIString());
+                    TeamworkCLI.log(item.print());
                 });
             });
         }
@@ -403,7 +399,7 @@ export default class TeamworkCLI {
             }).catch((err) => {
                 if(err.code === 404) {
                     var installation = TeamworkCLI.getCurrent("installation");
-                    throw new CLIError(`Task #${err.id} not found in ${installation.toCLIString()}.`);
+                    throw new CLIError(`Task #${err.id} not found in ${installation.print()}.`);
                 } else throw err;
             }).then((tasks) => {
                 // Generate the task index

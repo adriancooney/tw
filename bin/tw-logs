@@ -36,14 +36,14 @@ TeamworkCLI.command(() => {
         return [api, task];
     }).spread((api, task) => {
         // Log the task were getting the logs forr
-        TeamworkCLI.log(task.toCLIString());
+        TeamworkCLI.log(task.print());
 
         // Get the tasks
         return api.getLogs(task);
     }).then((logs) => {
         if(logs.length) {
             logs.forEach((log, i) => {
-                TeamworkCLI.log(`[#${i + 1}] ` + log.toCLIString() + "\n");
+                TeamworkCLI.log(`[#${i + 1}] ` + log.print() + "\n");
             });
         } else {
             TeamworkCLI.log(TeamworkCLI.color.red("No time logged."));

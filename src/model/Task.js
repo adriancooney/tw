@@ -94,7 +94,7 @@ export default class Task extends Model {
             status: task.status,
             priority: task.priority,
             progress: task.progress,
-            completed: false,
+            completed: task.completed,
             attachmentCount: task['attachments-count'],
             dependencyCount: task['has-dependencies'],
             commentCount: task['comments-count'],

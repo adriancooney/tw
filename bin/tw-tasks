@@ -4,16 +4,21 @@ import program from "commander";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import TeamworkAPI from "../src/TeamworkAPI";
 
+const CHILD_NOTATION = " |- ";
+
 TeamworkCLI.command(() => {
     program
         .option("-l, --list", "Display tasks as a static list.")
+        .option("-a, --all", "Display completed tasks.")
         .parse(process.argv);
 
     return TeamworkCLI.getAPI().then((api) => {
         var tasklist = TeamworkCLI.getCurrent("tasklist");
         if(!tasklist) TeamworkCLI.fail(`No tasklist currently selected. Please select a tasklist with ${TeamworkCLI.color.green("tw tasklists")}.`);
 
-        return api.getTasks(tasklist);
+        return api.getTasks(tasklist, {
+            completed: program.all
+        });
     }).then((tasks) => {
         // Flatten the task list
         tasks = tasks.reduce((list, task) => {
@@ -34,8 +39,9 @@ TeamworkCLI.command(() => {
                 message: "Tasks",
                 name: "task",
                 choices: tasks.map(({ task, level }) => {
+                    var taskTitle = task.print()
                     return {
-                        name: (level > 0 ? " |- " : "") + task.toCLIString(),
+                        name: level > 0 ? CHILD_NOTATION + taskTitle.split("\n").join("\n |  ") : taskTitle,
                         value: task
                     }
                 })
@@ -46,7 +52,7 @@ TeamworkCLI.command(() => {
             });
         } else {
             tasks.forEach(({ task, level }) => {
-                TeamworkCLI.log((level > 0 ? "   " : "") + task.toCLIString());
+                TeamworkCLI.log((level > 0 ? CHILD_NOTATION : "") + task.print());
             });
         }
     });

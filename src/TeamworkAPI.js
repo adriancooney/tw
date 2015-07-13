@@ -242,20 +242,17 @@ export default class TeamworkAPI {
      * @param  {Tasklist|Project} scope Tasklist or project.
      * @return {Promise} -> {Array[Task]}
      */
-    getTasks(scope) {
-        if(scope instanceof Tasklist) return this.getTasksForTasklist(scope);
-        else if(scope instanceof Project) return this.getTasksForProject(scope);
-    }
+    getTasks(scope, { completed } = {}) {
+        var url;
 
-    /**
-     * Get tasks for a specific tasklist.
-     * @param  {Tasklist} tasklist The tasklist to get the tasks for.
-     * @return {Promise} -> {Array[Task]}
-     */
-    getTasksForTasklist(tasklist) {
-        return this.request("GET", `/tasklists/${tasklist.id}/tasks.json`, null, {
+        if(scope instanceof Tasklist) url = `/tasklists/${scope.id}/tasks.json`;
+        else if(scope instanceof Project) url = `/projects/${scope.id}/tasks.json`;
+
+        return this.request("GET", url, null, {
             query: {
-                nestSubTasks: 1
+                nestSubTasks: 1,
+                includeCompletedTasks: !!completed,
+                includeCompletedSubtasks: !!completed
             }
         }).then(({ body, url }) => {
             return body["todo-items"].map((task) => {

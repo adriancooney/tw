@@ -14,6 +14,8 @@ const PRIORITY_COLORS = {
     "medium": "magenta" // I know the website uses yellow but tasks are yellow.
 };
 
+const TEXT_WIDTH = 70;
+
 /*
  * Override Inquirer's prompt.
  */
@@ -35,25 +37,25 @@ inquirer.prompt.prompts.password.prototype.getQuestion = getQuestion;
 /*
  * Models
  */
-Log.prototype.toCLIString = function() { 
+Log.prototype.print = function() { 
     return `${chalk.green(this.author.getNameInitialed())} ` + 
         `logged ${chalk.magenta(this.duration.humanize())} on ${this.date.calendar()}.` +
         (this.description ? `\n${indent(this.description, "    ")}` : '');
 };
 
-Project.prototype.toCLIString = function() { 
+Project.prototype.print = function() { 
     return `${chalk.underline(this.name)}` + (this.starred ? chalk.yellow(" ★") : ""); 
 };
 
-Tasklist.prototype.toCLIString = function() { 
+Tasklist.prototype.print = function() { 
     return `${chalk.bold(this.name)}`; 
 };
 
-Installation.prototype.toCLIString = function() { 
+Installation.prototype.print = function() { 
     return `${chalk.cyan(this.name)} (${this.domain})`; 
 };
 
-Task.prototype.toCLIString = function(detailed = true){
+Task.prototype.print = function(detailed = true){
     var details = [];
     details.push(this.getProgress())
 
@@ -67,7 +69,13 @@ Task.prototype.toCLIString = function(detailed = true){
 
     details = details.join(", ");
 
-    return `[#${this.id}] ${this.title} (${details})`
+    var content = `${this.title} (#${this.id}, ${details})`
+
+    if(this.completed) {
+        content = chalk.green(tick() + " " + chalk.strikethrough(content));
+    }
+
+    return content;
 };
 
 /*
@@ -75,4 +83,8 @@ Task.prototype.toCLIString = function(detailed = true){
  */
 function indent(block, chars = "# ") {
     return chars + block.split("\n").join("\n" + chars);
+}
+
+function tick() {
+    return "\u2714";
 }

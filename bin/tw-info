@@ -27,6 +27,6 @@ TeamworkCLI.command(() => {
     }).then((task) => {
         if(program.id) TeamworkCLI.log("#" + task.id);
         else if(program.url) TeamworkCLI.log(task.getURL());
-        else TeamworkCLI.log(task.toCLIString());
+        else TeamworkCLI.log(task.print());
     });
 });

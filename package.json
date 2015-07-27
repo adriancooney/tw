@@ -1,6 +1,6 @@
 {
   "name": "tw-beta",
-  "version": "0.1.14",
+  "version": "0.2.0",
   "description": "Teamwork Projects CLI and git integration.",
   "main": "build/src/TeamworkAPI.js",
   "bin": {

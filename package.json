@@ -21,7 +21,10 @@
     "build:bin:chmod": "node -e \"var fs = require('fs'); fs.readdirSync('build/bin').forEach(function(f){ console.log('chmod 0775 %s', f); fs.chmod('build/bin/'+f, 0775); });\"",
     "build:bin": "npm run build:bin:compile && npm run build:bin:rename && npm run build:bin:fix-binary && npm run build:bin:chmod",
     "build:src": "babel src -d build/src",
-    "build": "npm run clean && npm run build:src && npm run build:bin",
+    "build": "npm run lint && npm run clean && npm run build:src && npm run build:bin",
+    "lint:bin": "eslint bin/tw*",
+    "lint:src": "eslint src",
+    "lint": "npm run lint:bin && npm run lint:src",
     "clean": "rimraf build/",
     "parser": "pegjs --allowed-start-rules duration,task,progress,commit,installation src/parser/TeamworkParser.pegjs",
     "prepublish": "npm run build"
@@ -33,6 +36,7 @@
   "license": "MIT",
   "devDependencies": {
     "babel": "^5.6.14",
+    "eslint": "^1.2.1",
     "mkdirp": "^0.5.1",
     "renamer": "^0.5.6",
     "replace": "^0.3.0",
@@ -50,5 +54,33 @@
     "open": "0.0.5",
     "os-tmpdir": "^1.0.1",
     "rc": "^1.0.3"
+  },
+  "eslintConfig": {
+    "rules": {
+        "indent": [
+            2,
+            4
+        ],
+        "quotes": [
+            2,
+            "double"
+        ],
+        "linebreak-style": [
+            2,
+            "unix"
+        ],
+        "semi": [
+            2,
+            "always"
+        ]
+    },
+    "ecmaFeatures": { 
+      "modules": true 
+    },
+    "env": {
+        "es6": true,
+        "browser": true
+    },
+    "extends": "eslint:recommended"
   }
 }

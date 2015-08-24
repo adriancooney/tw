@@ -174,6 +174,7 @@ export default class TeamworkAPI {
                     id: parseInt(project.id),
                     company: project.company,
                     name: project.name,
+                    domain: this.installation.domain,
                     description: project.description,
                     status: project.status,
                     tags: project.tags,
@@ -221,6 +222,7 @@ export default class TeamworkAPI {
     getTasklists(project) {
         return this.request("GET", `/projects/${project.id}/tasklists.json`).then(({ body }) => {
             return body.tasklists.map((tasklist) => {
+                tasklist.domain = this.installation.domain;
                 return Tasklist.fromAPI(tasklist);
             });
         });
@@ -232,8 +234,10 @@ export default class TeamworkAPI {
      * @return {Promise} -> {Tasklist}
      */
     getTasklistByID(tasklist) {
-        return this.request("GET", `/tasklists/${tasklist}.json`).then(({body}) => {
-            return new Tasklist.fromAPI(body["todo-list"]);
+        return this.request("GET", `/tasklists/${tasklist}.json`).then(({ body }) => {
+            var tasklist = body["todo-list"];
+            tasklist.domain = this.installation.domain;
+            return Tasklist.fromAPI(body["todo-list"]);
         });
     }
 

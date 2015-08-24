@@ -7,13 +7,50 @@ import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
 TeamworkCLI.command(() => {
     program
         .option("-l, --list", "Display projects as a static list.")
+        .option("--starred", "Display only starred projects")
         .parse(process.argv);
 
     return TeamworkCLI.getAPI().then((api) => {
         return api.getProjects();
     }).then((projects) => {
-        return TeamworkCLI.chooseCurrentItem(program.list, "Projects", "project", projects);
-    }).then(() => {
-        TeamworkCLI.log("Current project updated.");
+        // Apply some filters
+        projects = projects.filter((project) => {
+            // Filter only starred
+            if(program.starred) return project.starred;
+            else return true;
+        });
+
+        if(!program.list) {
+            // Get the current project so we can highlight it in the list
+            var current = TeamworkCLI.getCurrent("project");
+
+            return TeamworkCLI.prompt([{
+                type: "list",
+                message: "Projects",
+                name: "project",
+                choices: projects.map((project) => {
+                    var str = project.print();
+
+                    // Highlight the current project
+                    if(current && project.id === current.id) {
+                        str = `${TeamworkCLI.color.yellow(str)} ${TeamworkCLI.color.blue("(current)")}`;
+                    }
+
+                    return {
+                        name: str,
+                        value: project
+                    }
+                })
+            }]).then((answers) => {
+                return TeamworkCLI.save(answers);
+            }).then(() => {
+                TeamworkCLI.log("Current project updated.");
+            });
+        } else {
+            // Display a static list
+            projects.forEach((project) => {
+                TeamworkCLI.log(project.print());
+            });
+        }
     })
 });

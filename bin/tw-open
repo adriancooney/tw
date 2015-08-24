@@ -1,24 +1,34 @@
 #!/usr/bin/env babel-node --
 
 import program from "commander";
-import TeamworkCLI from "../src/TeamworkCLI";
-import Teamwork from "../src/Teamwork";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import open from "open";
 
-program
-    .arguments("[task]")
-    .option("--task", "Open up the current task in the browser")
-    .option("--tasklist", "Open up the current tasklist in the browser")
-    .option("--project", "Open up the current project in the browser")
-    .parse(process.argv);
+TeamworkCLI.command(() => {
+    program
+        .arguments("[task]")
+        .option("--task", "Open up the current task in the browser.")
+        .option("--tasklist", "Open up the current tasklist in the browser.")
+        .option("--project", "Open up the current project in the browser.")
+        .parse(process.argv);
 
-if(process.args.length) {
+    if(program.args.length) {
 
-} else {
-    var item = ["task", "tasklist", "project"].find((item) => { return program[item]; });
+    } else {
+        // Find what type of item the user wants to open
+        var item = ["task", "tasklist", "project"].find((item) => { return program[item]; });
 
-    if(item) {
+        // Default to "task"
+        if(!item) item = "task";
+
+        // Check if we have the current one
         var current = TeamworkCLI.getCurrent(item);
 
-        // TODO: Open task in browser with node-open
+        if(current) {
+            // And open in the browser
+            open(current.getURL());
+        } else {
+            throw new CLIError(`No current ${item} selected.`);
+        }
     }
-}
+});

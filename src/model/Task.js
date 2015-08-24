@@ -134,7 +134,10 @@ export default class Task extends Model {
         }
 
         if(task.subTasks) {
-            data.subTasks = task.subTasks.map(task => new Task(Task.fromAPI(task)));
+            data.subTasks = task.subTasks.map((subTask) => {
+                subTask.domain = task.domain;
+                return new Task(Task.fromAPI(subTask))
+            });
         }
 
         if(task['predecessors']) {
@@ -144,6 +147,10 @@ export default class Task extends Model {
         return new Task(data);
     }
 
+    /**
+     * Return the URL for the task.
+     * @return {String} 
+     */
     getURL() {
         return `http://${this.domain}/tasks/${this.id}`;
     }

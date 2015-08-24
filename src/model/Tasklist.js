@@ -15,6 +15,7 @@ export default class Tasklist extends Model {
             id: true,
             name: true,
             description: false,
+            domain: false,
             complete: false,
             private: false,
             uncompletedCount: false,
@@ -31,6 +32,14 @@ export default class Tasklist extends Model {
     }
 
     /**
+     * Return the url for this tasklist.
+     * @return {String}
+     */
+    getURL() {
+        return `http://${this.domain}/tasklists/${this.id}`;
+    }
+
+    /**
      * Create a Task object from the Teamwork API.
      * @param {Object} data Data returned from Teamwork API.
      * @return {Task} 
@@ -40,13 +49,14 @@ export default class Tasklist extends Model {
             id: parseInt(tasklist.id),
             name: tasklist.name,
             description: tasklist.description,
+            domain: tasklist.domain,
             complete: tasklist.complete,
             private: tasklist.private,
             uncompletedCount: parseInt(tasklist['uncompleted-count']) || 0,
             project: {
                 id: parseInt(tasklist.projectId),
                 name: tasklist.projectName
-            },
+            }
         });
     }
 }

@@ -14,8 +14,6 @@ const PRIORITY_COLORS = {
     "medium": "magenta" // I know the website uses yellow but tasks are yellow.
 };
 
-const TEXT_WIDTH = 70;
-
 /*
  * Override Inquirer's prompt.
  */

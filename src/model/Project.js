@@ -36,11 +36,10 @@ export default class Project extends Model {
     }
 
     /**
-     * Create a Project object from the Teamwork API.
-     * @param {Object} data Data returned from Teamwork API.
-     * @return {Task} 
+     * Return the URL for the projects.
+     * @return {String} 
      */
-    static fromAPI(data) {
-
+    getURL() {
+        return `http://${this.domain}/projects/${this.id}`;
     }
 }

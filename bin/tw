@@ -4,13 +4,14 @@ import program from "commander";
 import TeamworkCLI from "../src/TeamworkCLI";
 
 program
-    .version("0.1.14")
+    .version("0.2.0")
     .command("status", "View current task, tasklist and project.")
     .command("projects", "View and select a project.")
     .command("tasklists [project]", "View and select a tasklist from the current project.")
     .command("tasks [tasklist]", "View and select a task from the current tasklist.")
     .command("task <task>", "Select a task by ID or URL.")
     .command("info [task]", "Display info about a task.")
+    .command("open [task]", "Open up a task, tasklist or project in the browser.")
     .command("progress [task] <progress>", "Add progress to a task.")
     .command("log [task] <timestamp>", "Log time to a task or project.")
     .command("logs [task]", "Get the time logs for a task.")
@@ -19,6 +20,7 @@ program
     .command("redo", "Redo the last action.")
     .command("login", "Login to Teamwork.")
     .command("reset", "Delete any configuration files (logout).")
+    .command("config", "View the Teamwork config.")
     .command("clear", "Clear the current status.")
     .command("install-hooks [dir]", "Install git hooks.")
     .command("hook-commit-msg <path>", "Run the commit-msg hook on a file. (Internal)")

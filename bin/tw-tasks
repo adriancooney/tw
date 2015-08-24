@@ -9,6 +9,7 @@ const CHILD_NOTATION = " |- ";
 TeamworkCLI.command(() => {
     program
         .option("-l, --list", "Display tasks as a static list.")
+        .option("-f, --filter <string>", "Filter the tasks by title containing <string>.")
         .option("-a, --all", "Display completed tasks.")
         .parse(process.argv);
 
@@ -30,6 +31,23 @@ TeamworkCLI.command(() => {
 
             return list;
         }, []);
+
+        // Create the filter if we have one
+        var filter;
+
+        try {
+            filter = new RegExp(program.filter);
+        } catch(e) {
+            throw new CLIError(`Invalid filter "${program.filter}".`)
+        }
+
+        // Filter the tasks 
+        tasks = tasks.filter(({ task }) => {
+            if(filter) {
+                // Apply the filter to the titles
+                return task.title.match(filter);
+            } else return true;
+        });
 
         if(!program.list) {
             var current = TeamworkCLI.getCurrent("task");

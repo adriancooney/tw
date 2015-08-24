@@ -10,7 +10,7 @@ export default class Person extends Model {
             username: false
         }, data);
 
-        this.name = `${this.firstName} ${this.lastName}`
+        this.name = `${this.firstName} ${this.lastName}`;
     }
 
     getNameInitialed() {

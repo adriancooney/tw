@@ -1,0 +1,8 @@
+#!/usr/bin/env babel-node --
+
+// Force commander to think it's tw instead of twd
+// so it doesn't attempt to get `twd-<command>`
+process.argv[1] = process.argv[1].replace(/twd$/, "tw");
+
+// And go to tw
+require("./tw");

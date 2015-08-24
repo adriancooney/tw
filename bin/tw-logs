@@ -1,14 +1,8 @@
 #!/usr/bin/env babel-node --
 
 import program from "commander";
-import Promise from "bluebird";
-import moment from "moment";
 import Teamwork from "../src/Teamwork";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
-import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
-import { Debug } from "../src/library/Debug";
-
-const debug = Debug("tw:cmd:log");
 
 TeamworkCLI.command(() => {
     program
@@ -28,7 +22,7 @@ TeamworkCLI.command(() => {
             task = api.getTaskByID(task);
         } else {
             // Tet the current task
-            task = TeamworkCLI.getCurrent("task")
+            task = TeamworkCLI.getCurrent("task");
 
             if(!task) throw new CLIError("No specified or current task.");
         }

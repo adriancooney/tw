@@ -17,7 +17,7 @@ export default class Company extends Model {
      * @param {Object} data Data returned from Teamwork API.
      * @return {Task} 
      */
-    static fromAPI(data) {
+    static fromAPI(/* data */) {
 
     }
 }

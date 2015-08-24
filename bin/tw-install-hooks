@@ -18,9 +18,10 @@ TeamworkCLI.command(() => {
     debug("git repo = %s", gitRepo);
 
     return Promise.try(() => {
-        // Check if the current directory is a git repository
+        // Check if the current directory is a git repository. It will jump
+        // to the catch clause if it fails
         return fs.statAsync(gitRepo);
-    }).then((stat) => {
+    }).then(() => {
 
         // Get the hooks
         return fs.readdirAsync(hooksPath);

@@ -1,15 +1,11 @@
-import Path from "path";
 import http from "http";
-import url from "url";
 import Promise from "bluebird";
 import request from "request";
-import { Debug } from "./library/Debug"
-import Teamwork from "./Teamwork";
+import { Debug } from "./library/Debug";
 
 import {
     Log,
     Task,
-    User,
     Person,
     Project,
     Tasklist,
@@ -93,8 +89,8 @@ export default class TeamworkAPI {
             password 
         }).then(({ response }) => {
             // Find the tw-auth cookie
-            var authCookie = response.headers['set-cookie'].find((cookie) => {
-                if(cookie.match(/tw-auth/)) return true
+            var authCookie = response.headers["set-cookie"].find((cookie) => {
+                if(cookie.match(/tw-auth/)) return true;
                 else return false;
             });
 
@@ -118,10 +114,10 @@ export default class TeamworkAPI {
         else if(!(installation instanceof Installation)) throw new Error("installation parameter must be a String or an Installation object.");
 
         // Create the installation
-        var api = new api(auth, installation);
+        api = new api(auth, installation);
 
         // Test the auth key.
-        return api.getProfile().catch(HTTPError, (err) => {
+        return api.getProfile().catch(HTTPError, () => {
             throw new Error(`Unable to authorize with key "${auth}".`);
         }).then(() => {
             debug("Successfully logged in with auth key (%s).", auth);
@@ -154,11 +150,11 @@ export default class TeamworkAPI {
             var person = body.person;
 
             return new Person({
-                id: parseInt(person['id']),
-                firstName: person['first-name'],
-                lastName: person['last-name'],
-                username: person['user-name'],
-                avatar: person['avatar-url']
+                id: parseInt(person["id"]),
+                firstName: person["first-name"],
+                lastName: person["last-name"],
+                username: person["user-name"],
+                avatar: person["avatar-url"]
             });
         });
     }
@@ -178,7 +174,7 @@ export default class TeamworkAPI {
                     description: project.description,
                     status: project.status,
                     tags: project.tags,
-                    createdAt: project['created-on'],
+                    createdAt: project["created-on"],
                     logo: project.logo || null,
                     starred: project.starred
                 });
@@ -192,13 +188,13 @@ export default class TeamworkAPI {
      * @return {Promise} -> {Project}
      */
     getProjectByID(project) {
-        return this.request("GET", `/projects/${project}.json`).then(({ body, url }) => {
+        return this.request("GET", `/projects/${project}.json`).then(({ body }) => {
             var project = body.project;
             return new Project({
                 id: parseInt(project.id),
                 name: project.name,
                 domain: this.installation.domain,
-                createdAt: project['created-on'],
+                createdAt: project["created-on"],
                 status: project.status,
                 description: project.description,
                 starred: project.starred,
@@ -258,7 +254,7 @@ export default class TeamworkAPI {
                 includeCompletedTasks: !!completed,
                 includeCompletedSubtasks: !!completed
             }
-        }).then(({ body, url }) => {
+        }).then(({ body }) => {
             return body["todo-items"].map((task) => {
                 task.domain = this.installation.domain;
                 return Task.fromAPI(task);
@@ -323,7 +319,7 @@ export default class TeamworkAPI {
                     author: {
                         id: parseInt(entry["person-id"]),
                         firstName: entry["person-first-name"],
-                        lastName: entry["person-last-name"],
+                        lastName: entry["person-last-name"]
                     },
                     project: {
                         id: parseInt(entry["project-id"]),
@@ -415,7 +411,7 @@ export default class TeamworkAPI {
         return {
             auth: this.auth,
             installation: this.installation
-        }
+        };
     }
 }
 
@@ -424,7 +420,7 @@ export class HTTPError extends Error {
         super();
 
         var statusMessage = http.STATUS_CODES[code];
-        this.message = `HTTP Error ${code}: ${message || statusMessage}`
+        this.message = `HTTP Error ${code}: ${message || statusMessage}`;
         this.code = this.statusCode = code;
         this.statusMessage = statusMessage;
         this.url = url;

@@ -59,7 +59,7 @@ export default class Task extends Model {
      * @return {String} 
      */
     getProgress() {
-        return `${this.progress}%`
+        return `${this.progress}%`;
     }
     /**
      * Convert to Task to a string. 
@@ -68,7 +68,7 @@ export default class Task extends Model {
      */
     toString(detailed = true) {
         var details = [];
-        details.push(this.getProgress())
+        details.push(this.getProgress());
 
         if(detailed) {
             if(this.assigned) details.push(this.assigned.getNameInitialed());
@@ -77,7 +77,7 @@ export default class Task extends Model {
 
         details = details.join(", ");
 
-        return `[#${this.id}] ${this.title} (${details})`
+        return `[#${this.id}] ${this.title} (${details})`;
     }
 
     /**
@@ -95,54 +95,54 @@ export default class Task extends Model {
             priority: task.priority,
             progress: task.progress,
             completed: task.completed,
-            attachmentCount: task['attachments-count'],
-            dependencyCount: task['has-dependencies'],
-            commentCount: task['comments-count'],
-            createdAt: task['created-on'],
-            lastChangedAt: task['last-changed-on'],
-            hasUnreadComments: task['has-unread-comments'],
-            hasReminders: task['has-reminders'],
+            attachmentCount: task["attachments-count"],
+            dependencyCount: task["has-dependencies"],
+            commentCount: task["comments-count"],
+            createdAt: task["created-on"],
+            lastChangedAt: task["last-changed-on"],
+            hasUnreadComments: task["has-unread-comments"],
+            hasReminders: task["has-reminders"],
             loggedTime: parseInt(task.timeIsLogged),
-            estimatedTime: task['estimated-minutes'],
+            estimatedTime: task["estimated-minutes"],
             tasklist: {
-                id: task['todo-list-id'],
-                name: task['todo-list-name']
+                id: task["todo-list-id"],
+                name: task["todo-list-name"]
             },
             project: {
-                id: task['project-id'],
-                name: task['project-name']
+                id: task["project-id"],
+                name: task["project-name"]
             },
             company: {
-                id: task['company-id'],
-                name: task['company-name']
+                id: task["company-id"],
+                name: task["company-name"]
             },
             author: {
-                firstName: task['creator-firstname'],
-                lastName: task['creator-lastname'],
-                id: task['creator-id'],
-                avatar: task['creator-avatar-url']
+                firstName: task["creator-firstname"],
+                lastName: task["creator-lastname"],
+                id: task["creator-id"],
+                avatar: task["creator-avatar-url"]
             },
             tags: task.tags
         };
 
-        if(task['responsible-party-id']) {
+        if(task["responsible-party-id"]) {
             data.assigned = {
-                id: parseInt(task['responsible-party-id']),
-                firstName: task['responsible-party-firstname'],
-                lastName: task['responsible-party-lastname']
-            }
+                id: parseInt(task["responsible-party-id"]),
+                firstName: task["responsible-party-firstname"],
+                lastName: task["responsible-party-lastname"]
+            };
         }
 
         if(task.subTasks) {
             data.subTasks = task.subTasks.map((subTask) => {
                 subTask.domain = task.domain;
-                return new Task(Task.fromAPI(subTask))
+                return new Task(Task.fromAPI(subTask));
             });
         }
 
-        if(task['predecessors']) {
+        // if(task["predecessors"]) {
             // TODO: Predecessors. Ask what's the difference between predecessors and dependencies.
-        }
+        // }
 
         return new Task(data);
     }

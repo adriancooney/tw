@@ -1,8 +1,7 @@
 #!/usr/bin/env babel-node --
 
 import program from "commander";
-import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
-import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
+import TeamworkCLI from "../src/TeamworkCLI";
 
 TeamworkCLI.command(() => {
     program
@@ -39,7 +38,7 @@ TeamworkCLI.command(() => {
                     return {
                         name: str,
                         value: project
-                    }
+                    };
                 })
             }]).then((answers) => {
                 return TeamworkCLI.save(answers);
@@ -52,5 +51,5 @@ TeamworkCLI.command(() => {
                 TeamworkCLI.log(project.print());
             });
         }
-    })
+    });
 });

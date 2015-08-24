@@ -1,4 +1,3 @@
-import request from "request";
 import debug from "debug";
 
 // Weird Babel bug, won't translate `export debug` to this.

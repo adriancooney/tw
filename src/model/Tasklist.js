@@ -52,7 +52,7 @@ export default class Tasklist extends Model {
             domain: tasklist.domain,
             complete: tasklist.complete,
             private: tasklist.private,
-            uncompletedCount: parseInt(tasklist['uncompleted-count']) || 0,
+            uncompletedCount: parseInt(tasklist["uncompleted-count"]) || 0,
             project: {
                 id: parseInt(tasklist.projectId),
                 name: tasklist.projectName

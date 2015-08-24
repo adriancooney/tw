@@ -18,7 +18,7 @@ export default class Tag extends Model {
      * @param {Object} data Data returned from Teamwork API.
      * @return {Task} 
      */
-    static fromAPI(data) {
+    static fromAPI(/* data */) {
 
     }
 }

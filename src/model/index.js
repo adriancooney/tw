@@ -16,4 +16,4 @@ export {
     Company,
     Tasklist,
     Installation
-}
+};

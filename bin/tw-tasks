@@ -2,7 +2,6 @@
 
 import program from "commander";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
-import TeamworkAPI from "../src/TeamworkAPI";
 
 const CHILD_NOTATION = " |- ";
 
@@ -26,7 +25,7 @@ TeamworkCLI.command(() => {
             list.push({ task, level: 0 });
 
             if(task.subTasks) {
-                list = list.concat(task.subTasks.map((t) => { return { task: t, level: 1} }));
+                list = list.concat(task.subTasks.map((t) => { return { task: t, level: 1}; }));
             }
 
             return list;
@@ -38,7 +37,7 @@ TeamworkCLI.command(() => {
         try {
             filter = new RegExp(program.filter);
         } catch(e) {
-            throw new CLIError(`Invalid filter "${program.filter}".`)
+            throw new CLIError(`Invalid filter "${program.filter}".`);
         }
 
         // Filter the tasks 
@@ -50,18 +49,16 @@ TeamworkCLI.command(() => {
         });
 
         if(!program.list) {
-            var current = TeamworkCLI.getCurrent("task");
-
             return TeamworkCLI.prompt([{
                 type: "list",
                 message: "Tasks",
                 name: "task",
                 choices: tasks.map(({ task, level }) => {
-                    var taskTitle = task.print()
+                    var taskTitle = task.print();
                     return {
                         name: level > 0 ? CHILD_NOTATION + taskTitle.split("\n").join("\n |  ") : taskTitle,
                         value: task
-                    }
+                    };
                 })
             }]).then((answers) => {
                 return TeamworkCLI.save(answers);

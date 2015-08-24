@@ -1,5 +1,4 @@
 import inquirer from "inquirer";
-import commander from "commander";
 import chalk from "chalk";
 import {
     Log, Project, Tasklist, Installation, Task
@@ -38,7 +37,7 @@ inquirer.prompt.prompts.password.prototype.getQuestion = getQuestion;
 Log.prototype.print = function() { 
     return `${chalk.green(this.author.getNameInitialed())} ` + 
         `logged ${chalk.magenta(this.duration.humanize())} on ${this.date.calendar()}.` +
-        (this.description ? `\n${indent(this.description, "    ")}` : '');
+        (this.description ? `\n${indent(this.description, "    ")}` : "");
 };
 
 Project.prototype.print = function() { 
@@ -55,7 +54,7 @@ Installation.prototype.print = function() {
 
 Task.prototype.print = function(detailed = true){
     var details = [];
-    details.push(this.getProgress())
+    details.push(this.getProgress());
 
     if(detailed) {
         if(this.assigned) details.push(chalk.green(this.assigned.getNameInitialed()));
@@ -67,7 +66,7 @@ Task.prototype.print = function(detailed = true){
 
     details = details.join(", ");
 
-    var content = `${this.title} (#${this.id}, ${details})`
+    var content = `${this.title} (#${this.id}, ${details})`;
 
     if(this.completed) {
         content = chalk.green(tick() + " " + chalk.strikethrough(content));

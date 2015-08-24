@@ -1,8 +1,6 @@
 #!/usr/bin/env babel-node --
 
-import fs from "fs";
 import { exec } from "child_process";
-import { resolve } from "path";
 import program from "commander";
 import Promise from "bluebird";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
@@ -25,7 +23,7 @@ Promise.try(() => {
     return run("git log -1 --pretty=%B", {
         cwd: repo
     });
-}).spread((message, err) => {
+}).spread((message) => {
     // We got out commit message
     if(message) {
         return TeamworkCLI.processCommitMessage(message);

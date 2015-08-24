@@ -2,7 +2,7 @@
 
 import program from "commander";
 import Promise from "bluebird";
-import Teamwork, { LoginError } from "../src/Teamwork";
+import Teamwork from "../src/Teamwork";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import { Debug } from "../src/library/Debug";
 import { Installation } from "../src/model/";
@@ -49,7 +49,7 @@ TeamworkCLI.command(() => {
                         return {
                             name: installation.print(),
                             value: installation
-                        }
+                        };
                     })
                 });
             }).then((answers) => {
@@ -71,7 +71,7 @@ TeamworkCLI.command(() => {
             } else if(program.email && program.password) {
                 // Login with passed details
                 debug("Logging via passed in credentials: %s, %s", program.email, program.installation.domain);
-                return Teamwork.login(program.email, program.password, program.installation.domain)
+                return Teamwork.login(program.email, program.password, program.installation.domain);
             } else {
                 throw new CLIError(`Please pass either a ${TeamworkCLI.color.blue("--auth")} key or a ${Teamwork.color.blue("--email")} and ${Teamwork.color.blue("--password")}.`);
             }

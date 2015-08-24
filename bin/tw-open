@@ -1,6 +1,7 @@
 #!/usr/bin/env babel-node --
 
 import program from "commander";
+import Teamwork from "../src/TeamworkCLI";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import open from "open";
 
@@ -13,7 +14,12 @@ TeamworkCLI.command(() => {
         .parse(process.argv);
 
     if(program.args.length) {
+        // Parse the task
+        var task = Teamwork.parse("task", program.args[0]);
 
+        Teamwork.getTaskByID(task).then((task) => {
+            open(task.getURL());
+        });
     } else {
         // Find what type of item the user wants to open
         var item = ["task", "tasklist", "project"].find((item) => { return program[item]; });

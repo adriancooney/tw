@@ -1,11 +1,9 @@
 #!/usr/bin/env babel-node --
 
 import program from "commander";
-import Promise from "bluebird";
 import moment from "moment";
 import Teamwork from "../src/Teamwork";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
-import TeamworkAPI, { LoginError } from "../src/TeamworkAPI";
 import { Debug } from "../src/library/Debug";
 
 import { Log } from "../src/model";
@@ -57,7 +55,7 @@ TeamworkCLI.command(() => {
                 item = api.getTaskByID(item);
             } else {
                 // No task, get the current
-                item = TeamworkCLI.getCurrent("task")
+                item = TeamworkCLI.getCurrent("task");
 
                 if(!item) throw new CLIError(`Please specify a task or select your current task with ${TeamworkCLI.color.blue("tw tasks")}.`);
             }
@@ -137,18 +135,18 @@ TeamworkCLI.command(() => {
                 name: "message",
                 message: "Message"
             }).then((answers) => {
-                return answers.message
+                return answers.message;
             });
         }
 
-        return [api, item, duration, offset, message]
+        return [api, item, duration, offset, message];
     }).spread((api, item, duration, offset, message) => {
         var user = TeamworkCLI.getCurrent("user");
 
         // Actually log the time with the API
         // Take a minute to realize the beauty that is the Moment API.
         return api.log(item, user, Log.create(moment.duration(duration), offset, message.trim()));
-    }).spread((log, result) => {
+    }).spread((log) => {
         TeamworkCLI.log(log.description());
     });
 });

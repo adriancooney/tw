@@ -1,7 +1,6 @@
 #!/usr/bin/env babel-node --
 
 import program from "commander";
-import Path from "path";
 import Promise from "bluebird";
 import fs from "fs";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";

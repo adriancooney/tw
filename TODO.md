@@ -44,5 +44,8 @@
 - [ ] Force the package to get the version from the package.json. We don't do this
     now because of a weird issue where we build, it copies the package.json and
     npm doesn't like two package.jsons or something ridiculous like that.
-- [ ] Ensure you can build cross platform.
-  - [ ] Use node module 'trash' to remove the directory.
+- [X] Ensure you can build cross platform.
+  - [X] Use node module 'trash' to remove the directory.
+
+# Roadmpa
+- Remove `rc`. It's slow.

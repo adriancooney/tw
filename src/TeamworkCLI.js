@@ -7,19 +7,16 @@ import rc from "rc";
 import moment from "moment";
 import tmpdir from "os-tmpdir";
 import editor from "editor";
-import commander from "commander";
 import Teamwork from "./Teamwork";
 import { Debug } from "./library/Debug";
 import Config from "./library/Config";
 import TeamworkAPI from "./TeamworkAPI";
 
-import Models, {
+import {
     Log,
-    Tag,
     Task,
     Person,
     Project,
-    Company,
     Tasklist,
     Installation,
 } from "./model";
@@ -135,7 +132,7 @@ export default class TeamworkCLI {
      * @return {Promise} -> {Answers}
      */
     static prompt(questions) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             inquirer.prompt(questions, resolve);
         });
     }
@@ -156,7 +153,7 @@ export default class TeamworkCLI {
 
         // Write the initial content to it
         return fs.writeFileAsync(tmpfile, content).then(() => {
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 editor(tmpfile, (code) => {
                     resolve(code);
                 });
@@ -282,7 +279,7 @@ export default class TeamworkCLI {
                     return {
                         name: str,
                         value: item
-                    }
+                    };
                 })
             }]).then((answers) => {
                 return TeamworkCLI.save(answers);
@@ -316,11 +313,11 @@ export default class TeamworkCLI {
 
         if(data) {
             switch(model) {
-                case "project": return new Project(data); break;
-                case "installation": return new Installation(data); break;
-                case "user": return new Person(data); break;
-                case "tasklist": return new Tasklist(data); break;
-                case "task": return new Task(data); break;
+            case "project": return new Project(data); 
+            case "installation": return new Installation(data);
+            case "user": return new Person(data);
+            case "tasklist": return new Tasklist(data);
+            case "task": return new Task(data);
             }
         }
     }
@@ -435,18 +432,17 @@ export default class TeamworkCLI {
                 return TeamworkCLI.getAPI().then((api) => {
                     return Promise.map(actions, (action) => {
                         switch(action.name) {
-                            case "Log": 
-                                // Gather all the information required for the action
-                                var user = TeamworkCLI.getCurrent("user");
+                        case "Log": 
+                            // Gather all the information required for the action
+                            var user = TeamworkCLI.getCurrent("user");
 
-                                // Get the task detail
-                                return api.getTaskByID(action.task).then((task) => {
-                                    var duration = moment.duration(action.duration);
+                            // Get the task detail
+                            return api.getTaskByID(action.task).then((task) => {
+                                var duration = moment.duration(action.duration);
 
-                                    // And log to Teamwork
-                                    return api.log(task, user, Log.create(duration, moment().subtract(duration), message));
-                                });
-                            break;
+                                // And log to Teamwork
+                                return api.log(task, user, Log.create(duration, moment().subtract(duration), message));
+                            });
                         }
                     });
                 });

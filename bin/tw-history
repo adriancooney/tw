@@ -3,7 +3,6 @@
 import program from "commander";
 import TeamworkCLI from "../src/TeamworkCLI";
 
-
 TeamworkCLI.command(() => {
     program
         .description("View you history of actions.")

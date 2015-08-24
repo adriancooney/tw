@@ -1,0 +1,45 @@
+#!/usr/bin/env babel-node --
+
+import TeamworkCLI from "../src/TeamworkCLI";
+import program from "commander";
+
+TeamworkCLI.command(() => {
+    program
+        .command("start [name]")
+        .description("Start a new timer.")
+        .action(() => {
+            TeamworkCLI.log("Starting new timer.");
+        });
+
+
+    program
+        .command("stop [name]")
+        .alias("pause")
+        .description("Stop/pause a timer.")
+        .action(() => {});
+
+    program
+        .command("resume [name]")
+        .alias("Resume a stopped/paused timer")
+        .description("Stop/pause a timer.")
+        .action(() => {});
+
+    program
+        .command("delete [name]")
+        .alias("rm")
+        .description("Delete a timer.")
+        .action(() => {});
+
+    program
+        .command("log [name]")
+        .alias("Log a timer to Teamwork")
+        .description("Stop/pause a timer.")
+        .action(() => {});
+
+    program
+        .command("list")
+        .description("List all ongoing timers")
+        .action(() => {});
+
+    program.parse(process.argv);
+});

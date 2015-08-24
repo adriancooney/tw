@@ -1,11 +1,16 @@
 #!/usr/bin/env babel-node --
 
+import program from "commander";
 import Path from "path";
 import Promise from "bluebird";
 import fs from "fs";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 
 TeamworkCLI.command(() => {
+    program
+        .description("Delete your Teamwork config file.")
+        .parse(process.argv);
+
     return Promise.try(() => {
         var configPath = TeamworkCLI.getConfigPath();
         fs.unlinkSync(configPath);

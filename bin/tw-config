@@ -1,0 +1,32 @@
+#!/usr/bin/env babel-node --
+
+import program from "commander";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+
+TeamworkCLI.command(() => {
+    program
+        .description("View the Teamwork config file.")
+        .option("-f, --filter <string>", "Only print keys that match a string.")
+        .option("--json", "Print the config as JSON output.")
+        .parse(process.argv);
+
+    try {
+        var filter = new RegExp(program.filter || ".*");
+    } catch(e) {
+        throw new CLIError(`Invalid filter "${program.filter}".`);
+    }
+
+    if(!program.json) {
+        (function print(object, path) {
+            Object.keys(object).forEach((key) => {
+                let value = object[key];
+                let currentPath = path + (path ? "." : "") + key;
+
+                if(!Array.isArray(value) && typeof value === "object") print(value, currentPath);
+                else if(currentPath.match(filter)) TeamworkCLI.log(`${currentPath} = %j`, value);
+            });
+        })(TeamworkCLI.config, "");
+    } else {
+        TeamworkCLI.log(JSON.stringify(TeamworkCLI.config, null, 2));
+    }
+});

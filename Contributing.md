@@ -1,7 +1,7 @@
 # Contributing
 Teamwork CLI is built using ES6 and several awesome modules (see [package.json][package]).
 
-### Development
+### Setup
 To start developing on Teamwork CLI, you need to remove it first if you have it installed.
 
     $ npm remove -g tw
@@ -30,5 +30,11 @@ To keep things simple, Teamwork CLI uses `npm` (on top of other CLI tools) to bu
 * `npm run clean` - Clean the project of all build files.
 * `npm run parser` - Build the PEGjs parser.
 * `npm run test` - Runs the test suite.
+
+### Debugging
+`tw` uses `debug` for all it's debugging purposes. To enable some useful debug output, you should set the `DEBUG` environment variable to `tw`. For example:
+
+    $ DEBUG=tw tw status
+
 
   [package]: /package.json

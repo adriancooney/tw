@@ -16,8 +16,8 @@
   "scripts": {
     "test": "mocha --compilers js:babel/register",
     "build:bin:compile": "babel \"bin/tw*\" -d build",
-    "build:bin:rename": "renamer -f '.js' -r '' 'build/bin/*.js' -v",
-    "build:bin:fix-binary": "replace '#!/usr/bin/env babel-node --' '#!/usr/bin/env node' build/bin -r",
+    "build:bin:rename": "renamer -f \".js\" -r '' \"build/bin/*.js\" -v",
+    "build:bin:fix-binary": "replace \"#!/usr/bin/env babel-node --\" \"#!/usr/bin/env node\" build/bin -r",
     "build:bin:chmod": "node -e \"var fs = require('fs'); fs.readdirSync('build/bin').forEach(function(f){ console.log('chmod 0775 %s', f); fs.chmod('build/bin/'+f, 0775); });\"",
     "build:bin": "npm run build:bin:compile && npm run build:bin:rename && npm run build:bin:fix-binary && npm run build:bin:chmod",
     "build:src": "babel src -d build/src",

@@ -32,9 +32,10 @@ To keep things simple, Teamwork CLI uses `npm` (on top of other CLI tools) to bu
 * `npm run test` - Runs the test suite.
 
 ### Debugging
-`tw` uses `debug` for all it's debugging purposes. To enable some useful debug output, you should set the `DEBUG` environment variable to `tw`. For example:
+`tw` uses [`debug`][debug] for all it's debugging purposes. To enable some useful debug output, you should set the `DEBUG` environment variable to `tw`. For example:
 
     $ DEBUG=tw tw status
 
 
-  [package]: /package.json
+  [package]: package.json
+  [debug]: https://github.com/visionmedia/debug

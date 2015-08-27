@@ -12,11 +12,14 @@ TeamworkCLI.command(() => {
     return TeamworkCLI.getAPI().then((api) => {
         return api.getProjects();
     }).then((projects) => {
-        // Apply some filters
-        projects = projects.filter((project) => {
-            // Filter only starred
-            if(program.starred) return project.starred;
-            else return true;
+        // Filter only the starred projects
+        if(program.starred) {
+            projects = projects.filter(project => project.starred);
+        }
+
+        projects.sort((project) => {
+            // Putted starred repositories to the top
+            return project.starred ? -1 : 1
         });
 
         if(!program.list) {

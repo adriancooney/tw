@@ -75,6 +75,12 @@ Task.prototype.print = function(detailed = true){
     return content;
 };
 
+Task.prototype.printFull = function() {
+    var str = this.print(true);
+
+    return str + `\n${this.description || "No description."}`;
+};
+
 /*
  * Handy functions. 
  */

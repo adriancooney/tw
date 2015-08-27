@@ -10,12 +10,16 @@ Next, clone the repo:
 
     $ git clone http://github.com/Teamwork/tw
 
-Once the repo is cloned, you need to `npm link` the repository to you npm modules. This will link the repo to your npm modules and add the binaries `tw` and `twd` to your `$PATH`.
+Once the repo is cloned, you need to install the dependencies required for building and running `tw`.
 
     $ cd tw
-    $ npm link
+    $ npm install
 
-The `twd` binary is the development binary that runs the ES6 code directly with `babel-node`. This means you do not have to build the tool to see changes. `tw` is the built version (that's distributed) that requires `npm run build` to see any effect from changes.
+Finally, you need [Babel][babel] installed globally so we can use it's `babel-node` tool to compile the source on the fly when the tool is used. This **is significantly** slower than the built tool so don't worry if you see some lag.
+
+    $ npm install -g babel
+
+After the dependencies are installed, you need to add `tw/bin` to your PATH so you can access the tool from the command line.
 
 ### Building
 To keep things simple, Teamwork CLI uses `npm` (on top of other CLI tools) to build itself. See [package.json][package] for the exact commands run. If you're confused about where the tools it depends on come from, they're `devDependencies` of the project and when you run a command, `npm` automatically adds the binary files these dependencies add to the `$PATH` of the command. So for example, `renamer` when installed locally isn't accessible via `renamer` on the command (you have to do `npm install -g renamer`) but *is* accessible in the npm scripts commands.
@@ -39,3 +43,4 @@ To keep things simple, Teamwork CLI uses `npm` (on top of other CLI tools) to bu
 
   [package]: package.json
   [debug]: https://github.com/visionmedia/debug
+  [babel]: https://babeljs.io/

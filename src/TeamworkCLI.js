@@ -453,16 +453,17 @@ export default class TeamworkCLI {
     /**
      * Create a command that handles errors and saving state.
      * @param  {Function} callback Callback -> Promise.
+     * @param  {Boolean} writeConfig Whether or not to write the config.
      * @return {Promise}            
      */
-    static command(callback) {
+    static command(callback, writeConfig = true) {
         // Read in the config
         TeamworkCLI.config = TeamworkCLI.readConfig();
         debug("Reading in config:", TeamworkCLI.config);
 
         return Promise.try(callback).then(() => {
             // Save the config
-            return TeamworkCLI.writeConfig(TeamworkCLI.config);
+            if(writeConfig) return TeamworkCLI.writeConfig(TeamworkCLI.config);
         }).catch(TeamworkCLI.fail);
     }
 }

@@ -17,10 +17,8 @@ TeamworkCLI.command(() => {
             projects = projects.filter(project => project.starred);
         }
 
-        projects.sort((project) => {
-            // Putted starred repositories to the top
-            return project.starred ? -1 : 1
-        });
+        // Sort projects by starred
+        projects.sort((project) => project.starred ? -1 : 1);
 
         if(!program.list) {
             // Get the current project so we can highlight it in the list

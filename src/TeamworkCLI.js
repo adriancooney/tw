@@ -18,7 +18,7 @@ import {
     Person,
     Project,
     Tasklist,
-    Installation,
+    Installation
 } from "./model";
 
 /**
@@ -132,9 +132,7 @@ export default class TeamworkCLI {
      * @return {Promise} -> {Answers}
      */
     static prompt(questions) {
-        return new Promise((resolve) => {
-            inquirer.prompt(questions, resolve);
-        });
+        return inquirer.prompt(questions);
     }
 
     /**

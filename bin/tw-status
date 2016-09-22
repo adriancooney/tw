@@ -1,23 +1,20 @@
-#!/usr/bin/env babel-node --
+#!/usr/bin/env babel-node
 
-import TeamworkCLI from "../src/TeamworkCLI";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 
 TeamworkCLI.command(() => {
-    var currentProject = TeamworkCLI.getCurrent("project"),
+    var currentUser = TeamworkCLI.getCurrent("user"),
+        currentProject = TeamworkCLI.getCurrent("project"),
         currentTasklist = TeamworkCLI.getCurrent("tasklist"),
-        currentUser = TeamworkCLI.getCurrent("user"),
         currentInstallation = TeamworkCLI.getCurrent("installation"),
         currentTask = TeamworkCLI.getCurrent("task");
 
-    var userString;
-
     if(currentUser) {
-        userString = `${TeamworkCLI.color.green(currentUser.getNameInitialed())} logged into ${currentInstallation.print()}`;
-    }
-
-    TeamworkCLI.log(
-    `${userString || "Not logged in."}
-  ${TeamworkCLI.color.blue("Project:")} ${currentProject ? currentProject.print() : "None"}
- ${TeamworkCLI.color.blue("Tasklist:")} ${currentTasklist ? currentTasklist.print() : "None"}
-     ${TeamworkCLI.color.blue("Task:")} ${currentTask ? currentTask.print() : "None"}`);
+        TeamworkCLI.log(
+        `${TeamworkCLI.color.green(currentUser.getNameInitialed())} logged into ${currentInstallation.print()}
+      ${TeamworkCLI.color.blue("Project:")} ${currentProject ? currentProject.print() : "None"}
+     ${TeamworkCLI.color.blue("Tasklist:")} ${currentTasklist ? currentTasklist.print() : "None"}
+         ${TeamworkCLI.color.blue("Task:")} ${currentTask ? currentTask.print() : "None"}`
+        );
+    } else throw new CLIError("Not logged in. Please login using `tw login`.");
 });

@@ -1,4 +1,4 @@
-#!/usr/bin/env babel-node --
+#!/usr/bin/env babel-node
 
 import program from "commander";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
@@ -63,7 +63,7 @@ TeamworkCLI.command(() => {
             }]).then((answers) => {
                 return TeamworkCLI.save(answers);
             }).then(() => {
-                TeamworkCLI.log("Current task updated.");
+                TeamworkCLI.done("Current task updated.");
             });
         } else {
             tasks.forEach(({ task, level }) => {

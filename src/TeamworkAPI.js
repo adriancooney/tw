@@ -9,7 +9,7 @@ import {
     Person,
     Project,
     Tasklist,
-    Installation,
+    Installation
 } from "./model";
 
 const debug = Debug("tw:api");

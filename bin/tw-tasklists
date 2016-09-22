@@ -17,6 +17,6 @@ TeamworkCLI.command(() => {
     }).then((tasklists) => {
         return TeamworkCLI.chooseCurrentItem(program.list, "Tasklists", "tasklist", tasklists);
     }).then(() => {
-        TeamworkCLI.log("Current tasklist updated.");
+        TeamworkCLI.done("Current tasklist updated.");
     });
 });

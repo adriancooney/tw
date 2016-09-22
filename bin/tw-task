@@ -7,6 +7,7 @@ import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 TeamworkCLI.command(() => {
     program
         .arguments("<task>")
+        .description("Select a task by ID or URL.")
         .parse(process.argv);
 
     return TeamworkCLI.getAPI().then((api) => {
@@ -25,6 +26,6 @@ TeamworkCLI.command(() => {
             task, project, tasklist
         });
     }).then(() => {
-        TeamworkCLI.log("Current task updated.");
+        TeamworkCLI.done("Current task updated.");
     });
 });

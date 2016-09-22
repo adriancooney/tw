@@ -44,7 +44,7 @@ TeamworkCLI.command(() => {
             }]).then((answers) => {
                 return TeamworkCLI.save(answers);
             }).then(() => {
-                TeamworkCLI.log("Current project updated.");
+                TeamworkCLI.done("Current project updated.");
             });
         } else {
             // Display a static list

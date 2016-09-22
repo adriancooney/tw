@@ -94,6 +94,10 @@ export default class TeamworkCLI {
         console.log.apply(console, logs);
     }
 
+    static done(message, ...logs) {
+        return TeamworkCLI.log.apply(null, [chalk.green(`✔ ${message}`)].concat(logs));
+    }
+
     /**
      * Validate some input and exit the program if it fails.
      * @param  {Function}    validator The validator which throws ValidationError.

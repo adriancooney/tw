@@ -4,8 +4,7 @@
   "description": "Teamwork Projects CLI and git integration.",
   "main": "build/src/TeamworkAPI.js",
   "bin": {
-    "tw": "build/bin/tw",
-    "twd": "bin/twd"
+    "tw": "build/bin/tw"
   },
   "files": [
     "build/"
@@ -17,7 +16,7 @@
     "test": "mocha --compilers js:babel/register",
     "build:bin:compile": "babel \"bin/tw*\" -d build",
     "build:bin:rename": "renamer -f \".js\" -r '' \"build/bin/*.js\" -v",
-    "build:bin:fix-binary": "replace \"#!/usr/bin/env babel-node --\" \"#!/usr/bin/env node\" build/bin -r",
+    "build:bin:fix-binary": "replace -q '#!/usr/bin/env babel-node.*' '#!/usr/bin/env node' build/bin -r",
     "build:bin:chmod": "node -e \"var fs = require('fs'); fs.readdirSync('build/bin').forEach(function(f){ console.log('chmod 0775 %s', f); fs.chmod('build/bin/'+f, 0775); });\"",
     "build:bin": "npm run build:bin:compile && npm run build:bin:rename && npm run build:bin:fix-binary && npm run build:bin:chmod",
     "build:src": "babel src -d build/src",
@@ -35,7 +34,11 @@
   "author": "Adrian Cooney <adrian.cooney@teamwork.com>",
   "license": "MIT",
   "devDependencies": {
-    "babel": "^5.6.14",
+    "babel": "^6.5.2",
+    "babel-cli": "^6.14.0",
+    "babel-preset-es2015": "^6.14.0",
+    "babel-preset-es2016": "^6.11.3",
+    "babel-preset-node6": "^11.0.0",
     "eslint": "^1.2.1",
     "mkdirp": "^0.5.1",
     "renamer": "^0.5.6",
@@ -44,39 +47,44 @@
   },
   "dependencies": {
     "bluebird": "^2.9.30",
-    "debug": "^2.2.0",
-    "moment": "^2.10.3",
-    "request": "^2.58.0",
     "chalk": "^1.0.0",
-    "commander": "^2.8.1",
+    "commander": "^2.9.0",
+    "debug": "^2.2.0",
     "editor": "^1.0.0",
-    "inquirer": "^0.8.5",
+    "inquirer": "^1.1.3",
+    "moment": "^2.10.3",
     "open": "0.0.5",
     "os-tmpdir": "^1.0.1",
-    "rc": "^1.0.3"
+    "rc": "^1.0.3",
+    "request": "^2.58.0"
+  },
+  "babel": {
+    "presets": [
+      "node6"
+    ]
   },
   "eslintConfig": {
     "rules": {
-        "indent": [
-            2,
-            4
-        ],
-        "quotes": [
-            2,
-            "double"
-        ],
-        "semi": [
-            2,
-            "always"
-        ],
-        "no-console": 0
+      "indent": [
+        2,
+        4
+      ],
+      "quotes": [
+        2,
+        "double"
+      ],
+      "semi": [
+        2,
+        "always"
+      ],
+      "no-console": 0
     },
-    "ecmaFeatures": { 
-      "modules": true 
+    "ecmaFeatures": {
+      "modules": true
     },
     "env": {
-        "es6": true,
-        "node": true
+      "es6": true,
+      "node": true
     },
     "extends": "eslint:recommended"
   }

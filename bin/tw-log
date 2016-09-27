@@ -1,7 +1,7 @@
-#!/usr/bin/env babel-node
-
+#!/usr/bin/env babel-node --
 import program from "commander";
 import moment from "moment";
+import handlebars from "handlebars";
 import Teamwork from "../src/Teamwork";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
 import { Debug } from "../src/library/Debug";
@@ -14,7 +14,8 @@ TeamworkCLI.command(() => {
     program
         .arguments("[task] <duration>")
         .description("Log time to a task or project.")
-        .option("-p,--project [project]", "Log the time to the specified or current project.")
+        .option("-p,--project <project>", "Log the time to the specified project.")
+        .option("-P, --currentproject", "Log the time to the current project.")
         .option("-m, --message <message>", "Log time with a message.")
         .option("-e, --editor", "Open up the default editor to write the log message.")
         .option("-t, --time <time>", "The time the log happened.")
@@ -24,14 +25,15 @@ TeamworkCLI.command(() => {
         .parse(process.argv);
 
     // Ensure we have *at least* a duration or --fill
-    if(program.args.length === 0 && !program.fill) throw new CLIError(`Please provide a ${TeamworkCLI.color.blue("<duration>")}.`);
+    if(program.args.length === 0 && !program.fill) 
+        throw new CLIError(`Please provide a ${TeamworkCLI.color.blue("<duration>")}.`);
 
     return TeamworkCLI.getAPI().then((api) => {
         var item;
 
         // If they specified a project, just get the project
-        if(program.project) {
-            if(typeof project === "string") {
+        if(program.project || program.currentproject) {
+            if(program.project) {
                 // We have a project ID
                 item = Teamwork.getProjectByID(Teamwork.parseProject(program.project));
             } else {
@@ -57,7 +59,9 @@ TeamworkCLI.command(() => {
                 // No task, get the current
                 item = TeamworkCLI.getCurrent("task");
 
-                if(!item) throw new CLIError(`Please specify a task or select your current task with ${TeamworkCLI.color.blue("tw tasks")}.`);
+                // If there's no current, fail
+                if(!item) 
+                    throw new CLIError(`Please specify a task or select your current task with ${TeamworkCLI.color.blue("tw tasks")}.`);
             }
         }
 
@@ -92,12 +96,14 @@ TeamworkCLI.command(() => {
                 }, []);
 
                 // If we have no log today, cop out!
-                if(!log) throw new CLIError(`No recent time logs today. ${TeamworkCLI.color.blue("--fill")} will only fill since you last time log today (starting at 8:00am).`);
+                if(!log) 
+                    throw new CLIError(`No recent time logs today. You can only ${TeamworkCLI.color.blue("--fill")} since your last time log today.`);
 
                 var diff = moment().diff(timestamp, "m");
 
                 // Check to make sure we actually have a time and it's greater than at *least* five minutes
-                if(diff < 5) throw new CLIError(`Your last log was ${timestamp.fromNow()}. It must be at least 5 minutes since your last log. Come on now, don't be silly.`);
+                if(diff < 5) 
+                    throw new CLIError(`Your last log was ${timestamp.fromNow()}. It must be at least 5 minutes since your last log. Come on now, don't be silly.`);
 
                 var offset = timestamp, duration = moment.duration(diff, "m");
 
@@ -141,12 +147,18 @@ TeamworkCLI.command(() => {
 
         return [api, item, duration, offset, message];
     }).spread((api, item, duration, offset, message) => {
+        if(!message.trim().length)
+            throw new CLIError("Empty message. Aborting.", undefined, false);
+
+        // Update any template variables in the message
+        message = handlebars.compile(message)({ duration: duration.humanize() });
+
         var user = TeamworkCLI.getCurrent("user");
 
         // Actually log the time with the API
         // Take a minute to realize the beauty that is the Moment API.
         return api.log(item, user, Log.create(moment.duration(duration), offset, message.trim()));
     }).spread((log) => {
-        TeamworkCLI.log(log.description());
+        TeamworkCLI.done(log.description());
     });
 });

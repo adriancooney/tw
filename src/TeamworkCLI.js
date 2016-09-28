@@ -4,6 +4,7 @@ import Promise from "bluebird";
 import inquirer from "inquirer";
 import chalk from "chalk";
 import rc from "rc";
+import commander from "commander";
 import moment from "moment";
 import tmpdir from "os-tmpdir";
 import editor from "editor";
@@ -94,8 +95,13 @@ export default class TeamworkCLI {
         console.log.apply(console, logs);
     }
 
+    /**
+     * Log a standard action completed message.
+     * @param  {String}    message Success message.
+     * @param  {...*}      logs    Anything to pass to console.log.
+     */
     static done(message, ...logs) {
-        return TeamworkCLI.log.apply(null, [chalk.green(`✔ ${message}`)].concat(logs));
+        TeamworkCLI.log.apply(null, [chalk.green(`✔ ${message}`)].concat(logs));
     }
 
     /**
@@ -140,8 +146,7 @@ export default class TeamworkCLI {
     }
 
     /**
-     * Prompt the user to enter content with
-     * the $EDITOR. 
+     * Prompt the user to enter content with their $EDITOR.
      * @param  {String} content The content to be placed in the editor.
      * @return {Promise} -> {String} The new content (minus the `content` parameter).
      */
@@ -465,7 +470,32 @@ export default class TeamworkCLI {
 
         return Promise.try(callback).then(() => {
             // Save the config
-            if(writeConfig) return TeamworkCLI.writeConfig(TeamworkCLI.config);
+            if(writeConfig) 
+                return TeamworkCLI.writeConfig(TeamworkCLI.config);
+        }).catch(TeamworkCLI.fail);
+    }
+
+    static run(command, argv = process.argv) {
+        // Setup the command
+        const commandInst = new command(commander);
+
+        // Setup the arguments and options (CLI switches)
+        commandInst.setup(commander);
+
+        if(typeof argv === "string")
+            argv = argv.split(" ");
+
+        // Parse the arguments via Commander. Commander
+        // WILL exit the process here if it finds something wrong.
+        commander.parse(argv);
+
+        // Get the options and add the arguments
+        const options = commander.opts();
+        options.args = commander.args;
+
+        return Promise.try(() => {
+            // Execute the command
+            return commandInst.execute(options);
         }).catch(TeamworkCLI.fail);
     }
 }
@@ -479,9 +509,23 @@ TeamworkCLI.init();
  * code.
  */
 export class CLIError extends Error {
-    constructor(reason, code) {
+    constructor(reason, code, showHelp = true) {
         super();
-        this.message = `${reason.replace(/\.?$/, ".")} Please see ${TeamworkCLI.color.blue("--help")} for more information.`;
+        this.message = reason.replace(/\.?$/, ".");
         this.code = code;
+
+        if(showHelp)
+            this.message += ` Please see ${TeamworkCLI.color.blue("--help")} for more information.`;
+    }
+}
+
+export class Command {
+    constructor(command) {
+        this.command = command;
+        this.color = chalk;
+
+        // Add some conventions
+        this.color.option = this.color.blue;
+        this.color.command = this.color.blue;
     }
 }

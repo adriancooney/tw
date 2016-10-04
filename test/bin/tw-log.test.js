@@ -5,7 +5,7 @@ import LogCommand from "../../bin/tw-log";
 import { execute, api, match, data } from "./";
 
 describe("tw-log", () => {
-    it("-d 2h -t 42144", () => {
+    it("-d 2h -t 42144 -m 'Hello world!'", () => {
         const task = 42144;
         const duration = "2h";
         const message = "Hello world!";
@@ -15,14 +15,14 @@ describe("tw-log", () => {
 
         // GET /tasks/42144.json
         // Get's the item
-        expectations.push(mock.expects("getTaskByID")
+        mock.expects("getTaskByID")
             .once()
             .withExactArgs(task)
-            .resolves(data.task(task)));
+            .resolves(data.task(task));
 
         // POST /tasks/42144/time_entries.json
         // Log the time.
-        expectations.push(mock.expects("logToTask")
+        mock.expects("logToTask")
             .once()
             .withExactArgs(
                 // Ensure task object has the same ID
@@ -30,7 +30,7 @@ describe("tw-log", () => {
 
                 // Make sure the message is passed and duration is correct
                 sinon.match.has("duration")
-            ).resolves(data.log(1)));
+            ).resolves(data.log(1));
 
         return execute(LogCommand, {
             duration, task, message

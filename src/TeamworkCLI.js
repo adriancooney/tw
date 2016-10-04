@@ -47,21 +47,6 @@ const debug = Debug("tw:cli");
 
 export default class TeamworkCLI {
     /**
-     * Fail to execute and exit with a reason and code.
-     * @param  {String} reason The reason for the exit.
-     * @param  {Number} code   The exit code (default: 1)
-     */
-    static fail(reason, code = 1) {
-        if(reason instanceof Error) {
-            debug(reason.stack);
-            reason = reason.message;
-        }
-
-        TeamworkCLI.log(chalk.red("error"), reason);
-        process.exit(code);
-    }
-
-    /**
      * Log output to the console.
      * @param  {...*} logs Anything to pass to console.log.
      */
@@ -77,6 +62,30 @@ export default class TeamworkCLI {
      */
     static done(message, ...logs) {
         TeamworkCLI.log.apply(null, [chalk.green(`✔ ${message}`)].concat(logs));
+    }
+
+    /**
+     * Fail to execute and exit with a reason and code.
+     * @param  {String} reason The reason for the exit.
+     * @param  {Number} code   The exit code (default: 1)
+     */
+    static fail(reason, code = 1) {
+        if(reason instanceof Error) {
+            debug(reason.stack);
+            reason = reason.message;
+        }
+
+        TeamworkCLI.log(chalk.red("error"), reason);
+        process.exit(code);
+    }
+
+    /**
+     * Cancel an operation.
+     * @param  {String} cancellationMessage The reason for cancelling.
+     */
+    static cancel(cancellationMessage) {
+        TeamworkCLI.log(chalk.yellow("cancel"), cancellationMessage);
+        process.exit(0);
     }
 
     /**
@@ -165,6 +174,35 @@ export default class TeamworkCLI {
     }
 
     /**
+     * Prompt the user to confirm (y/N) a question.
+     * @param  {String} confirmation The confirmation question.
+     * @return {Promise}             
+     */
+    static confirm(confirmation) {
+        return TeamworkCLI.prompt({
+            type: "confirm",
+            name: "confirmation",
+            message: confirmation
+        }).then(answers => answers.confirmation);
+    }
+
+    /**
+     * Ask if the user would like to continue with the operation. If they
+     * do not, the program exits with code 0 and prints a cancellation
+     * message.
+     * @param  {String} confirmation        The confirmation question.
+     * @param  {String} cancellationMessage The cancellation message to display.
+     * @return {Promise}
+     */
+    static continue(confirmation, cancellationMessage) {
+        return TeamworkCLI.confirm(confirmation).then((proceed) => {
+            if(!proceed) {
+                TeamworkCLI.cancel(cancellationMessage);
+            }
+        });
+    }
+
+    /**
      * Set a preference in the config.
      * @param {String} name  The name of the property.
      * @param {*} value The value of the preference. (JSON)
@@ -194,10 +232,7 @@ export default class TeamworkCLI {
      * @return {Object} Config.
      */
     static readConfig() {
-        debug("reading in config")
         const config = rc(TEAMWORK_RC_PREFIX, {}, () => {});
-
-        console.log(config);
         return new Config(config);
     }
 
@@ -407,7 +442,11 @@ export default class TeamworkCLI {
             TeamworkCLI.loading(true);
 
             // Execute the request
-            return request.apply(null, arguments).finally(() => {
+            return request.apply(null, arguments).catch({
+                code: "ENOTFOUND"
+            }, err => {
+                throw new CLIError("Unable to connect to the internet. Please connect and try again.", "ENOTFOUND", false);
+            }).finally(() => {
                 TeamworkCLI.loading(false);
             });
         };
@@ -417,7 +456,7 @@ export default class TeamworkCLI {
             const config = TeamworkCLI.readConfig();
 
             // Setup the command
-            const commandInst = new command(commander);
+            const commandInst = new command(commander, config);
 
             // Setup the arguments and options (CLI switches)
             commandInst.setup(commander);

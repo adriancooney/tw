@@ -32,7 +32,7 @@ export default class Project extends Model {
      * @return {String}
      */
     toString() {
-        return `[#${this.id}] ${this.name}`;
+        return `Project: ${this.name}`;
     }
 
     /**

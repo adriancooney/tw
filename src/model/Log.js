@@ -26,7 +26,8 @@ export default class Log extends Model {
     }
 
     toString() {
-        return `${this.author.getNameInitialed()} logged ${this.duration.humanize()} ${this.date.calendar()}.\n > ${this.description.split("\n").join("\n > ")}`;
+        return `${this.author.getNameInitialed()} logged ${this.duration.humanize()} ${this.date.calendar()}.` 
+            + (this.description ? `\n\n    ${this.description.split("\n").join("\n    ")}\n` : "");
     }
 
     /**

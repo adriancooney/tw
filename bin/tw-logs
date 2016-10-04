@@ -1,47 +1,67 @@
-#!/usr/bin/env babel-node
-
-import program from "commander";
+#!/usr/bin/env babel-node --
+import moment from "moment";
+import Promise from "bluebird";
 import Teamwork from "../src/Teamwork";
 import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import Command from "../src/library/Command";
+import { Debug } from "../src/library/Debug";
 
-TeamworkCLI.command(() => {
-    program
-        .arguments("[task]")
-        .option("-p, --project", "View the time logs the current project.")
-        .parse(process.argv);
+export default class LogsCommand extends Command {
+    setup(command) {
+        command
+            .description("View times logs for a project, tasklist or task.")
+            .option("-e, --everyone", "View everyone's time logs for a project, tasklist or task.")
+            .option("--yesterday", "View time logs created yesterday.")
+            .option("--week", "View time logs created within the last week.")
+            .option("--month", "View time logs created within the last month.")
+            .option("--since <timestamp>", "View time logs since a specific time (DD/MM/YYYY HH:mm).")
+            .option("--to <timestamp>", "View time logs up until a specific time (DD/MM/YYYY HH:mm).")
+            .option("--all", "View all time logs created.");
 
-    return TeamworkCLI.getAPI().then((api) => {
-        var task = program.args[0];
+        this.addScopeOptions(command);
+    }
 
-        if(task) {
-            // Get the task ID
-            task = Teamwork.parse("task", program.args[0]);
+    execute(options) {
+        return this.getAPI().then(api => {
+            return [api, this.getScopeFromOptions(api, options)];
+        }).spread((api, scope) => {
+            const user = this.getCurrent("user");
 
-            // We have a task ID, let's get it. Supplied tasks
-            // always have precedence over the current task.
-            task = api.getTaskByID(task);
-        } else {
-            // Tet the current task
-            task = TeamworkCLI.getCurrent("task");
+            let to, from;
+            if(!options.all) {
+                // The end of the date range of the log (defaults to now)
+                to = options.to ? moment(options.to, "DD/MM/YYYY HH:mm") : moment();
+                // The start of the date range (defaults to today)
+                from = moment().startOf("day").add(8, "hours"); // Moment's API is just beautiful.
 
-            if(!task) throw new CLIError("No specified or current task.");
-        }
+                if(options.yesterday) from = from.subtract(1, "day");
+                else if(options.week) from = from.subtract(1, "week");
+                else if(options.month) from = from.subtract(1, "month");
+                else if(options.since) from = moment(options.since, "DD/MM/YYYY HH:mm");
+            }
 
-        return [api, task];
-    }).spread((api, task) => {
-        // Log the task were getting the logs forr
-        TeamworkCLI.log(task.print());
+            // Get the tasks
+            return [api.getLogs(scope, {
+                user: !options.everyone ? user : undefined,
+                from, to,
+                sortOrder: "ASC"
+            }), scope, from, to];
+        }).spread((logs, scope, from, to) => {
+            // Log the task were getting the logs forr
+            TeamworkCLI.log(`Viewing ${options.everyone ? "everyones" : "your"} time logs`
+                + (from && to ? `${scope ? " for " + this.color.scope(scope.toString()) : ""} since ${from.calendar()}` 
+                    + `${options.to ? " until " + to.calendar() : ""}` : "") + ".\n");
 
-        // Get the tasks
-        return api.getLogs(task);
-    }).then((logs) => {
-        if(logs.length) {
-            logs.forEach((log, i) => {
-                TeamworkCLI.log(`[#${i + 1}] ` + log.print() + "\n");
-            });
-        } else {
-            TeamworkCLI.log(TeamworkCLI.color.red("No time logged."));
-        }
-    });
-});
+            if(logs.length) {
+                logs.forEach((log, i) => {
+                    TeamworkCLI.log(` [#${i + 1}] ` + log.toString());
+                });
+            } else {
+                TeamworkCLI.log("No time logged.");
+            }
+        });
+    }
+}
 
+if(require.main === module)
+    TeamworkCLI.run(LogsCommand);

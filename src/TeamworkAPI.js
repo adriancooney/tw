@@ -47,7 +47,7 @@ export default class TeamworkAPI {
                 qs: query,
                 headers
             }, (err, response, body) => {
-                if(err) throw err;
+                if(err) reject(err);
                 else {
                     if(response.statusCode >= 200 && response.statusCode < 300) resolve({ body, response, url });
                     else {
@@ -288,7 +288,7 @@ export default class TeamworkAPI {
      * @param  {Moment} options.to   The end date to get logs for.
      * @return {Promise} -> {Array[Log]}
      */
-    getLogs(scope, { user, page, sort, from, to } = {}) {
+    getLogs(scope, { user, page, sort, sortOrder, from, to } = {}) {
         var url, query = {};
 
         // Sort out the scope of the request
@@ -299,7 +299,8 @@ export default class TeamworkAPI {
         // Sort out the parameters
         if(user) query.userId = user.id;
         if(page) query.page = page;
-        if(sort) query.sort = sort;
+        if(sort) query.sortby = sort;
+        if(sortOrder) query.sortorder = sortOrder;
         if(from && to) {
             query.fromdate = from.format("YYYYMMDD");
             query.fromtime = from.format("HH:mm");
@@ -364,7 +365,7 @@ export default class TeamworkAPI {
         return this.request("POST", `/tasks/${task.id}/time_entries.json`, {
             "time-entry": {
                 "description": log.description,
-                "person-id": log.author.user.id,
+                "person-id": log.author.id,
                 "date": log.date.format("YYYYMMDD"),
                 "time": log.date.format("HH:mm"),
                 "hours": log.hours,
@@ -389,7 +390,7 @@ export default class TeamworkAPI {
         return this.request("POST", `/projects/${project.id}/time_entries.json`, {
             "time-entry": {
                 description: log.description,
-                "person-id": log.author.user.id,
+                "person-id": log.author.id,
                 "date": log.date.format("YYYYMMDD"),
                 "time": log.date.format("HH:mm"),
                 "hours": log.hours,

@@ -1,4 +1,5 @@
 import chalk from "chalk";
+import Promise from "bluebird";
 import TeamworkCLI, { CLIError } from "../TeamworkCLI";
 import Teamwork, { ParserError } from "../Teamwork";
 import { 
@@ -18,6 +19,8 @@ export default class Command {
         // Add some conventions
         this.color.option = this.color.blue;
         this.color.command = this.color.blue;
+        this.color.duration = this.color.magenta;
+        this.color.scope = this.color.cyan;
     }
 
     /**
@@ -66,5 +69,72 @@ export default class Command {
      */
     setCurrent(model, instance) {
         return this.config.set(model, instance);
+    }
+
+    /**
+     * Add the scope options to the command. Scope defines either a
+     * project, tasklist or task.
+     * 
+     * @param {commander} command
+     */
+    addScopeOptions(command) {
+        command
+            .option("-p, --project <project>", "Log the time to a project.")
+            .option("-s, --tasklist <tasklist>", "Log the time to a tasklist.")
+            .option("-t, --task <task>", "Log the time to a task.")
+            .option("-P, --current-project", "Log the time to the current project.")
+            .option("-S, --current-tasklist", "Log the time to the current tasklist.")
+            .option("-T, --current-task", "Log the time to the current task.");
+    }
+
+    /**
+     * Return the scope from the options passed.
+     * @param  {TeamworkAPI} api     API instance.
+     * @param  {Object} options The options object received from commander.
+     * @return {Promise}
+     */
+    getScopeFromOptions(api, options) {
+        // Find the item they want to log the time to
+        return ["task", "tasklist", "project"].reduce((scope, type) => {
+            const capType = type[0].toUpperCase() + type.substr(1);
+
+            if(scope && (options[type] || options[`current${capType}`])) {
+                // Make sure they haven't specified more than one scope
+                throw new CLIError(`Clashing log targets. Please only specify a task ${this.color.option("-t")},`
+                    + ` tasklist ${this.color.option("-s")} or project ${this.color.option("-p")}.`);
+            } else if(scope) return scope;
+
+            // They passed in an explicit task, tasklist or project
+            if(options[type]) {
+                // Thank god for API consistency.
+                // Get the from the API the item type by Id. We query the API for the item to 
+                // see if it exists and to display information about what we just logged to.
+                return api[`get${capType}ByID`](Teamwork.parse(type, options[type]))
+            } else if(options[`current${capType}`]) {
+                let scope = this.getCurrent(type);
+
+                if(!scope)
+                    throw new CLIError(`Current ${type} is not set. Please use ${this.color.command("tw select")} to pick a ${type}.`);
+
+                return Promise.resolve(scope);
+            }
+        }, null) || Promise.resolve();
+    }
+
+    /**
+     * Get the scope from the passed options. If it does
+     * not exist, throw an error.
+     * @param  {TeamworkAPI} api     API instance.
+     * @param  {Object}      options The options object received by commander.
+     * @return {Promise}
+     */
+    requireScopeFromOptions(api, options) {
+        return this.getScopeFromOptions(api, options).then(scope => {
+            if(!scope)
+                throw new Error(`Please provide a target to log to with ${this.color.option("-t")},` 
+                    + ` tasklist ${this.color.option("-s")} or project ${this.color.option("-p")} switches.`);
+
+            return scope;
+        });
     }
 }

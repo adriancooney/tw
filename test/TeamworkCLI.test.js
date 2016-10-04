@@ -7,7 +7,7 @@ describe("TeamworkCLI", () => {
             id: 1234,
             firstName: "Adrian",
             lastName: "Teamwork"
-        });
+        })
     }));
 
     describe(".expandCommitMessage(message)", () => {

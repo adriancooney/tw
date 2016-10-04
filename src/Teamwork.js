@@ -59,10 +59,10 @@ export default class Teamwork extends TeamworkAPI {
      * @param  {Project|Task} scope    The project or task to log time to.
      * @param {User} user The user to log the time to.
      * @return {Promise}
-     */
+     *
     log(scope, user, log) {
         return this.pushAction(new LogAction({ scope, user, log }));
-    }
+    }*/
 
     /**
      * Push an action into the action stack.
@@ -129,7 +129,7 @@ export default class Teamwork extends TeamworkAPI {
      */
     static parse(rule, content) {
         try {
-            return TeamworkParser.parse(content, { startRule: rule });
+            return TeamworkParser.parse(content.toString(), { startRule: rule });
         } catch(err) {
             throw new ParserError(`Invalid ${rule}: "${content}"`);
         }

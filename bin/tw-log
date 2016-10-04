@@ -2,78 +2,67 @@
 import moment from "moment";
 import handlebars from "handlebars";
 import Teamwork from "../src/Teamwork";
-import TeamworkCLI, { CLIError, Command } from "../src/TeamworkCLI";
+import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import Command from "../src/library/Command";
 import { Debug } from "../src/library/Debug";
 import { Log } from "../src/model";
 
 const debug = Debug("tw:cmd:log");
 
-export class LogCommand extends Command {
+export default class LogCommand extends Command {
     setup(command) {
         command
-            .arguments("[task] <duration>")
-            .description("Log time to a task or project.")
-            .option("-p, --project <project>", "Log the time to the specified project.")
+            .description("Log time to a project, tasklist or task.")
+            .option("-d, --duration <duration>", "Specify the duration of the log.")
+            .option("-F, --fill", "Log the time since your last log today.")
+            .option("-m, --message <message>", "Specify the log message.")
+            .option("-p, --project <project>", "Log the time to a project.")
+            .option("-s, --tasklist <tasklist>", "Log the time to a tasklist.")
+            .option("-t, --task <task>", "Log the time to a task.")
             .option("-P, --current-project", "Log the time to the current project.")
-            .option("-m, --message <message>", "Log time with a message.")
-            .option("-e, --editor", "Open up the default editor to write the log message.")
-            .option("-t, --time <time>", "The time the log happened.")
-            .option("-F, --fill", "Use the time since your last log today as duration.")
-            .option("-d, --date <date>", "The date of the time log.")
-            .option("--silent", "Don't prompt for a log message.");
+            .option("-S, --current-tasklist", "Log the time to the current tasklist.")
+            .option("-T, --current-task", "Log the time to the current task.")
+            .option("--time <time>", "Set the start time of the log")
+            .option("--date <date>", "Set the date of the log.")
+            .option("--timestamp <timestamp>", "Set the start timestamp (Unix).");
     }
 
     execute(options) {
         // Ensure we have *at least* a duration or --fill
-        if(options.args.length === 0 && !options.fill) 
-            throw new CLIError(`Please provide a ${this.color.option("<duration>")}.`);
+        if(!options.duration && !options.fill) 
+            throw new CLIError(`Please provide a ${this.color.option("-d, --duration>")}.`);
 
-        return TeamworkCLI.getAPI().then((api) => {
+        return this.getAPI().then((api) => {
             var item;
 
-            // If they specified a project, just get the project
-            if(options.project || options.currentproject) {
-                if(options.project) {
-                    // We have a project ID
-                    item = Teamwork.getProjectByID(Teamwork.parseProject(options.project));
-                } else {
-                    // Just a boolean, add to the current project
-                    item = TeamworkCLI.getCurrent("project");
+            // Find the item they want to log the time to
+            ["task", "tasklist", "project"].forEach((type) => {
+                if(item && (options[type] || options[`current-${type}`]))
+                    throw new CLIError(`Clashing log targets. Please only specify a task ${this.color.option("-t")}, tasklist ${this.color.option("-s")} or project ${this.color.option("-p")}.`);
 
-                    if(!item) throw new Error(`Please specify a project or select a current project with ${this.color.command("tw projects")}.`);
+                // They passed in an explicit task, tasklist or project
+                if(options[type]) {
+                    // Thank god for API consistency.
+                    // Get the from the API the item type by Id. We query the API for the item to 
+                    // see if it exists and to display information about what we just logged to.
+                    item = api[`get${type[0].toUpperCase() + type.substr(1)}ByID`](Teamwork.parse(type, options[type]))
+                } else if(options[`current-${type}`]) {
+                    item = this.getCurrent(type);
+
+                    if(!item)
+                        throw new CLIError(`Current ${type} is not set. Please use ${this.color.command("tw select")} to pick a ${type}.`);
                 }
-            } else {
-                try {
-                    // Get the task ID
-                    item = Teamwork.parseTask(options.args[0]);
-                } catch(err) {
-                    // Since you can omit the task, we have to check if it's a duration
-                    debug("Invalid task %s, checking if duration.", options.args[0]);
-                }
+            });
 
-                if(item) {
-                    // We successfully parsed the task ID, let's get it. Supplied tasks
-                    // always have precedence over the current task.
-                    item = api.getTaskByID(item);
-                } else {
-                    // No task, get the current
-                    item = TeamworkCLI.getCurrent("task");
-
-                    // If there's no current, fail
-                    if(!item) 
-                        throw new CLIError(`Please specify a task or select your current task with ${this.color.command("tw tasks")}.`);
-                }
-            }
-
-            return [api, item];
+            return Promise.all([api, item]);
         }).spread((api, item) => {
             if(options.fill) {
                 // The user asks us to fill the time since the last
                 // time entry. It only does it for the current project
                 // and if it's within the last day so we don't go
                 // filling in weeks
-                var currentProject = TeamworkCLI.getCurrent("project"),
-                    currentUser = TeamworkCLI.getCurrent("user");
+                var currentProject = this.getCurrent("project"),
+                    currentUser = this.getCurrent("user");
 
                 return api.getLogs(currentProject, { 
                     user: currentUser, 
@@ -105,15 +94,16 @@ export class LogCommand extends Command {
                     if(diff < 5) 
                         throw new CLIError(`Your last log was ${timestamp.fromNow()}. It must be at least 5 minutes since your last log. Come on now, don't be silly.`);
 
-                    var offset = timestamp, duration = moment.duration(diff, "m");
+                    const offset = timestamp, duration = moment.duration(diff, "m");
 
                     return [api, item, duration, offset];
                 });
             } else {
                 // We have out task/project, now let's parse out duration.
-                var duration = options.args[1] || options.args[0];
+                var duration = options.duration;
 
-                if(!duration) throw new CLIError("Please supply a task or duration to log.");
+                if(!duration) 
+                    throw new CLIError("Please supply a task or duration to log.");
 
                 // Parse the duration. This will fail if it's invaild.
                 duration = Teamwork.parse("duration", duration);
@@ -122,28 +112,19 @@ export class LogCommand extends Command {
                 duration = moment.duration(duration);
 
                 // And the offset
-                var offset = moment().subtract(duration);
+                const offset = moment().subtract(duration);
 
                 return [api, item, duration, offset];
             }
         }).spread((api, item, duration, offset) => {
             var message;
 
-            // Get the message for the timelog
+            // Get the message for the timelog via -m switch
             if(options.message) message = options.message;
-            else if(options.silent) message = "";
-            else if(options.editor) {
-                // Prompt for a message 
+            else {
+                // Default to prompt for a message with $EDITOR
                 message = TeamworkCLI.promptWithEditor(`Logging ${duration.humanize()} to ${item.toString()}.\n${item.getURL()}`);
-            } else {
-                message = TeamworkCLI.prompt({
-                    type: "input",
-                    name: "message",
-                    message: "Message"
-                }).then((answers) => {
-                    return answers.message;
-                });
-            }
+            } 
 
             return [api, item, duration, offset, message];
         }).spread((api, item, duration, offset, message) => {
@@ -153,13 +134,13 @@ export class LogCommand extends Command {
             // Update any template variables in the message
             message = handlebars.compile(message)({ duration: duration.humanize() });
 
-            var user = TeamworkCLI.getCurrent("user");
+            var user = this.getCurrent("user");
 
             // Actually log the time with the API
             // Take a minute to realize the beauty that is the Moment API.
-            return api.log(item, user, Log.create(moment.duration(duration), offset, message.trim()));
-        }).spread((log) => {
-            TeamworkCLI.done(log.description());
+            return api.log(item, Log.create(moment.duration(duration), offset, user, message.trim()));
+        }).then((log) => {
+            TeamworkCLI.done(log.toString());
         });
     }
 }

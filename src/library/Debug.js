@@ -21,7 +21,7 @@ const DEBUG = true;
  * @param  {String} methodName - The method name.
  */
 export function abstract(className, methodName) {
-    throw new Error(`Abstract method "${methodName}" on the class ${className} needs to be implemented, not called directly.`);
+    if(DEBUG) throw new Error(`Abstract method "${methodName}" on the class ${className} needs to be implemented, not called directly.`);
 }
 
 /**
@@ -55,5 +55,5 @@ export function notYetImplemented(className, methodName) {
  * @param  {String} message - A voilation reason.   
  */
 export function invariant(condition, message) {
-    if(!condition()) throw new Error("Invariant voilation: " + message);
+    if(DEBUG && !condition()) throw new Error("Invariant voilation: " + message);
 }

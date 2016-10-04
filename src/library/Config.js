@@ -5,7 +5,6 @@ const debug = Debug("tw:config");
 export default class Config {
     constructor(config) {
         this.config = {};
-
         this.set(config);
     }
 
@@ -15,10 +14,10 @@ export default class Config {
      * @param {Mixed} value The value to set in the config.
      */
     set(key, value) {
-        if(key instanceof Object) Object.keys(key).forEach((prop) => { this.set(prop, key[prop]); });
+        if(key instanceof Object) Object.keys(key).forEach((prop) => this.set(prop, key[prop]));
         else {
-            debug("set %s = %s", key, value);
-            this.config[key] = value;
+            debug("set %s = %o", key, value);
+            return this.config[key] = value;
         }
     }
 

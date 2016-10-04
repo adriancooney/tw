@@ -68,7 +68,7 @@ describe("TeamworkAPI", () => {
         });
     });
 
-    describe.only("Projects", () => {
+    describe("Projects", () => {
         var api, data = {};
 
         before(() => {

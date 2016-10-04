@@ -46,31 +46,6 @@ Promise.promisifyAll(fs);
 const debug = Debug("tw:cli");
 
 export default class TeamworkCLI {
-    static init() {
-        // Export handy acces to Chalk
-        TeamworkCLI.color = chalk;
-
-        // Handle uncaught exceptions
-        process.on("uncaughException", TeamworkCLI.fail);
-
-        // Overwrite the request method so that
-        // we can set the loading state of the CLI
-        var request = TeamworkAPI.request;
-
-        TeamworkAPI.request = function() {
-            // Set loading CLI to loading
-            TeamworkCLI.loading(true);
-
-            // Execute the request
-            return request.apply(null, arguments).finally(() => {
-                TeamworkCLI.loading(false);
-            });
-        };
-
-        // Require the reporter
-        require(`./reporter/${REPORTER}`);
-    }
-
     /**
      * Fail to execute and exit with a reason and code.
      * @param  {String} reason The reason for the exit.
@@ -219,7 +194,11 @@ export default class TeamworkCLI {
      * @return {Object} Config.
      */
     static readConfig() {
-        return new Config(rc(TEAMWORK_RC_PREFIX, {}, () => {}));
+        debug("reading in config")
+        const config = rc(TEAMWORK_RC_PREFIX, {}, () => {});
+
+        console.log(config);
+        return new Config(config);
     }
 
     /**
@@ -229,24 +208,6 @@ export default class TeamworkCLI {
     static deleteConfig() {
         var configPath = TeamworkCLI.getConfigPath();
         return fs.unlinkSync(configPath);
-    }
-
-    /**
-     * Return an authenticated instance of the Teamwork API
-     * from the config.
-     * @return {Promise}
-     */
-    static getAPI() {
-        return Promise.try(() => {
-            // If we have a cached version, return it
-            if(TeamworkCLI.api) return TeamworkCLI.api;
-
-            var api = TeamworkCLI.config.get("api");
-
-            if(!api) throw new CLIError("Not logged in. Please login.");
-
-            return new Teamwork(api.auth, api.installation);
-        });
     }
 
     /**
@@ -309,36 +270,6 @@ export default class TeamworkCLI {
     }
 
     /**
-     * Get the current project.
-     * @param {String} model The name of the model.
-     * @return {Model}
-     */
-    static getCurrent(model) {
-        var data = TeamworkCLI.config.get(model);
-
-        debug("Getting current %s: %j", model, data);
-
-        if(data) {
-            switch(model) {
-            case "project": return new Project(data); 
-            case "installation": return new Installation(data);
-            case "user": return new Person(data);
-            case "tasklist": return new Tasklist(data);
-            case "task": return new Task(data);
-            }
-        }
-    }
-
-    /**
-     * Set the current model.
-     * @param {String} model    The name of the model.
-     * @param {Mixed} instance The instance of the model.
-     */
-    static setCurrent(model, instance) {
-        return TeamworkCLI.config.set(model, instance);
-    }
-
-    /**
      * Display or hide a loading indicator.
      * @param  {Boolean} isLoading Whether or not to display or hide the indicator.
      */
@@ -376,7 +307,7 @@ export default class TeamworkCLI {
     }
 
     /**
-     * Expand a commit message.
+     * Expand tasks IDs with title in a commit message.
      * @param  {String} message Commit message.
      * @return {Promise} -> {String}
      */
@@ -458,55 +389,61 @@ export default class TeamworkCLI {
     }
 
     /**
-     * Create a command that handles errors and saving state.
-     * @param  {Function} callback Callback -> Promise.
-     * @param  {Boolean} writeConfig Whether or not to write the config.
-     * @return {Promise}            
+     * Run a command.
+     * @param  {Function} command The command constructor.
+     * @param  {Array}    argv    The argv to pass to the command.
+     * @return {Promise}
      */
-    static command(callback, writeConfig = true) {
-        // Read in the config
-        TeamworkCLI.config = TeamworkCLI.readConfig();
-        debug("Reading in config:", TeamworkCLI.config);
-
-        return Promise.try(callback).then(() => {
-            // Save the config
-            if(writeConfig) 
-                return TeamworkCLI.writeConfig(TeamworkCLI.config);
-        }).catch(TeamworkCLI.fail);
-    }
-
     static run(command, argv = process.argv) {
-        // Setup the command
-        const commandInst = new command(commander);
+        // Handle uncaught exceptions
+        process.on("uncaughException", TeamworkCLI.fail);
 
-        // Setup the arguments and options (CLI switches)
-        commandInst.setup(commander);
+        // Overwrite the request method so that
+        // we can set the loading state of the CLI
+        var request = TeamworkAPI.request;
 
-        if(typeof argv === "string")
-            argv = argv.split(" ");
+        TeamworkAPI.request = function() {
+            // Set loading CLI to loading
+            TeamworkCLI.loading(true);
 
-        // Parse the arguments via Commander. Commander
-        // WILL exit the process here if it finds something wrong.
-        commander.parse(argv);
-
-        // Get the options and add the arguments
-        const options = commander.opts();
-        options.args = commander.args;
+            // Execute the request
+            return request.apply(null, arguments).finally(() => {
+                TeamworkCLI.loading(false);
+            });
+        };
 
         return Promise.try(() => {
+            // Read in the config (sync)
+            const config = TeamworkCLI.readConfig();
+
+            // Setup the command
+            const commandInst = new command(commander);
+
+            // Setup the arguments and options (CLI switches)
+            commandInst.setup(commander);
+
+            if(typeof argv === "string")
+                argv = argv.split(" ");
+
+            // Parse the arguments via Commander. Commander
+            // WILL exit the process here if it finds something wrong.
+            commander.parse(argv);
+
+            // Get the options and add the arguments
+            const options = commander.opts();
+            options.args = commander.args;
+
             // Execute the command
-            return commandInst.execute(options);
+            return commandInst.execute(options).then(() => {
+                debug("saving config file");
+            });
         }).catch(TeamworkCLI.fail);
     }
 }
 
-// And go!
-TeamworkCLI.init();
-
 /**
  * CLIError. Elegantly throw CLI errors which
- * allow you to exit the program with the appropriate
- * code.
+ * allow you to exit the program with the appropriate code.
  */
 export class CLIError extends Error {
     constructor(reason, code, showHelp = true) {
@@ -515,17 +452,6 @@ export class CLIError extends Error {
         this.code = code;
 
         if(showHelp)
-            this.message += ` Please see ${TeamworkCLI.color.blue("--help")} for more information.`;
-    }
-}
-
-export class Command {
-    constructor(command) {
-        this.command = command;
-        this.color = chalk;
-
-        // Add some conventions
-        this.color.option = this.color.blue;
-        this.color.command = this.color.blue;
+            this.message += ` Please see ${chalk.blue("--help")} for more information.`;
     }
 }

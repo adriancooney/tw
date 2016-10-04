@@ -41,7 +41,7 @@ Log.prototype.print = function() {
 };
 
 Project.prototype.print = function() { 
-    return `${chalk.underline(this.name)}` + (this.starred ? chalk.yellow(" ★") : ""); 
+    return `Project ${chalk.underline(this.name)}` + (this.starred ? chalk.yellow(" ★") : ""); 
 };
 
 Tasklist.prototype.print = function() { 
@@ -52,6 +52,24 @@ Installation.prototype.print = function() {
     return `${chalk.cyan(this.name)} (${this.domain})`; 
 };
 
+/**
+ * Print a task. Inspiration from git.
+ *
+ * Example:
+ *
+ *       Teamwork Chat (App) / Moving To Electron /
+ *       +-----------------------------------------------------------------------+
+ *      [X] main.coffee: Shouldn't `handleUpdates` be called when the app is 
+ *       |  ready / window is there?
+ *       +--------------+------------+---------------+-------- |==========---| 80%
+ *       | task #123840 | Unassigned | high priority | due 12/10/16 | 123 comments
+ *       |
+ *       \-[ ] ElectronWindowHandler: might be able to simplify resize 
+ *          |  method now?
+ *          +-----------+------------+---------------+-------- |==========---| 80%
+ *          |  #123840  | Unassigned | high priority | due 12/10/16 | 123 comments
+ *     
+ */
 Task.prototype.print = function(detailed = true){
     var details = [];
     details.push(this.getProgress());

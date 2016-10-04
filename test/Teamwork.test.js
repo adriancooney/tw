@@ -37,7 +37,7 @@ describe("Teamwork", () => {
 
     describe(".parse('task', content)", () => {
         it("should parse the task", () => {
-            assert.equal(Teamwork.parse("task", "#124124"), 124124, "ID");
+            assert.equal(Teamwork.parse("task", "124124"), 124124, "ID");
             assert.equal(Teamwork.parse("task", "chattest.teamwork.com/tasks/124124"), 124124, "URL");
             assert.equal(Teamwork.parse("task", "http://chattest.teamwork.com/tasks/124124"), 124124, "URL");
             assert.equal(Teamwork.parse("task", "https://chattest.teamwork.com/tasks/124124"), 124124, "URL");

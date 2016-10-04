@@ -22,7 +22,7 @@ export default class Log extends Model {
             company: Company
         }, data);
 
-        this.duration = moment.duration(this.minutes, "m").add(moment.duration(this.hours, "h"));
+        this.duration = data.duration || moment.duration(this.minutes, "m").add(moment.duration(this.hours, "h"));
     }
 
     toString() {
@@ -36,7 +36,7 @@ export default class Log extends Model {
      * @param  {String} comment  The message to log with.
      * @return {Log}
      */
-    static create(duration, offset, comment) {
+    static create(duration, offset, user, comment) {
         // It's a pity moment doesn't have a good API for this
         var minutes = duration.asMinutes(),
             hours = Math.floor(minutes / 60);
@@ -44,8 +44,9 @@ export default class Log extends Model {
         minutes = minutes - (hours * 60);
 
         return new Log({
-            minutes, hours,
+            duration, minutes, hours,
             date: offset,
+            author: user,
             description: comment
         });
     }

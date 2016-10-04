@@ -3,7 +3,7 @@ commit = actions:( action / any ) * {
     return actions.filter(function(a) { return !!a; });
 }
 
-/* actions */
+/* Actions */
 action = logAction / closeAction / progressAction
 
 closeAction = ("complet"i ("ed"i / "es"i / "e"i) / "close"i "s"i? / "fix"i "es"i?) __ task:task {
@@ -51,20 +51,19 @@ progress = sign:[-+]? percent:[0-9]+ "%" {
     };
 }
 
-/* installation */
-domain = ("http" "s"? "://")? installation:[a-zA-Z]+ ".teamwork.com" { return installation.join("") }
-installation = installation:domain "/"? .* { return installation + ".teamwork.com"; }
-
 /* Task */
-task = task:(taskID / taskURL) {
+task = task:(taskNum / taskURL) {
    return task;
 }
 
-taskID = "#" id:taskNum { return id }
 taskURL = domain "/tasks/" id:taskNum { return id; }
 taskNum = id:[0-9]+ { return parseInt(id.join(""), 10); }
 
-/* optional whitespace */
+/* Installation */
+installation = installation:domain "/"? .* { return installation + ".teamwork.com"; }
+domain = ("http" "s"? "://")? installation:[a-zA-Z]+ ".teamwork.com" { return installation.join("") }
+
+/* Optional whitespace */
 _  = [ \t\r\n]*
 
 /* mandatory whitespace */

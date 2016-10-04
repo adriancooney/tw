@@ -348,9 +348,9 @@ export default class TeamworkAPI {
      * @param {User} user The user to log the time to.
      * @return {Promise}
      */
-    log(scope, user, log) {
-        if(scope instanceof Task) return this.logToTask(scope, user, log);
-        else if(scope instanceof Project) return this.logToProject(scope, user, log);
+    log(scope, log) {
+        if(scope instanceof Task) return this.logToTask(scope, log);
+        else if(scope instanceof Project) return this.logToProject(scope, log);
     }
 
     /**
@@ -360,11 +360,11 @@ export default class TeamworkAPI {
      * @param  {Log} log The log to log.
      * @return {Promise}
      */
-    logToTask(task, user, log) {
+    logToTask(task, log) {
         return this.request("POST", `/tasks/${task.id}/time_entries.json`, {
             "time-entry": {
-                description: log.description,
-                "person-id": user.id,
+                "description": log.description,
+                "person-id": log.author.user.id,
                 "date": log.date.format("YYYYMMDD"),
                 "time": log.date.format("HH:mm"),
                 "hours": log.hours,
@@ -385,11 +385,11 @@ export default class TeamworkAPI {
      * @param  {Log} log The log to log.
      * @return {Promise}
      */
-    logToProject(project, user, log) {
+    logToProject(project, log) {
         return this.request("POST", `/projects/${project.id}/time_entries.json`, {
             "time-entry": {
                 description: log.description,
-                "person-id": user.id,
+                "person-id": log.author.user.id,
                 "date": log.date.format("YYYYMMDD"),
                 "time": log.date.format("HH:mm"),
                 "hours": log.hours,

@@ -3,7 +3,8 @@ import moment from "moment";
 import handlebars from "handlebars";
 import Promise from "bluebird";
 import Teamwork from "../src/Teamwork";
-import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import * as cli from "../src/cli";
+import { CLIError } from "../src/cli/error";
 import Command from "../src/library/Command";
 import { Debug } from "../src/library/Debug";
 import { Log } from "../src/model";
@@ -18,7 +19,9 @@ export default class LogCommand extends Command {
             .option("-F, --fill", "Log the time since your last log today.")
             .option("-m, --message <message>", "Specify the log message.")
 
-        this.addScopeOptions(command);
+        // Add the scoep selector options -tsp, -TSP
+        // Example: "Log the time to a project"
+        this.addScopeOptions(command, "Log the time to");
 
         command
             .option("-y, --no-prompt", "Don't prompt to confirm the log.")
@@ -116,7 +119,7 @@ export default class LogCommand extends Command {
             if(options.message) message = options.message;
             else {
                 // Default to prompt for a message with $EDITOR. Returns a promise!
-                message = TeamworkCLI.promptWithEditor(`Logging ${duration.humanize()} to ${item.toString()}.\n${item.getURL()}`);
+                message = cli.input.promptWithEditor(`Logging ${duration.humanize()} to ${item.toString()}.\n${item.getURL()}`);
             }
 
             return [api, item, duration, offset, message];
@@ -135,7 +138,7 @@ export default class LogCommand extends Command {
                 const cancellation = `Log aborted.`
 
                 // Confirm the log they're about to make
-                return TeamworkCLI.continue(confirmation, cancellation).then((proceed) => {
+                return cli.input.proceed(confirmation, cancellation).then((proceed) => {
                     return [api, item, duration, offset, message];
                 });
             } else return [api, item, duration, offset, message];
@@ -144,10 +147,10 @@ export default class LogCommand extends Command {
             // Take a minute to realize the beauty that is the Moment API.
             return api.log(item, Log.create(moment.duration(duration), offset, this.getCurrent("user"), message.trim()));
         }).then((log) => {
-            TeamworkCLI.done(log.toString());
+            cli.output.done(log.toString());
         });
     }
 }
 
 if(require.main === module)
-    TeamworkCLI.run(LogCommand);
+    cli.run(LogCommand);

@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import Promise from "bluebird";
-import TeamworkCLI, { CLIError } from "../TeamworkCLI";
+import * as cli from "../cli";
+import { CLIError } from "../cli/error";
 import Teamwork, { ParserError } from "../Teamwork";
 import { 
     Installation,
@@ -14,13 +15,7 @@ export default class Command {
     constructor(command, config) {
         this.command = command;
         this.config = config;
-        this.color = chalk;
-
-        // Add some conventions
-        this.color.option = this.color.blue;
-        this.color.command = this.color.blue;
-        this.color.duration = this.color.magenta;
-        this.color.scope = this.color.cyan;
+        this.color = cli.format.color;
     }
 
     /**
@@ -77,14 +72,14 @@ export default class Command {
      * 
      * @param {commander} command
      */
-    addScopeOptions(command) {
+    addScopeOptions(command, copy) {
         command
-            .option("-p, --project <project>", "Log the time to a project.")
-            .option("-s, --tasklist <tasklist>", "Log the time to a tasklist.")
-            .option("-t, --task <task>", "Log the time to a task.")
-            .option("-P, --current-project", "Log the time to the current project.")
-            .option("-S, --current-tasklist", "Log the time to the current tasklist.")
-            .option("-T, --current-task", "Log the time to the current task.");
+            .option("-p, --project <project>", `${copy} a project.`)
+            .option("-s, --tasklist <tasklist>", `${copy} a tasklist.`)
+            .option("-t, --task <task>", `${copy} a task.`)
+            .option("-P, --current-project", `${copy} the current project.`)
+            .option("-S, --current-tasklist", `${copy} the current tasklist.`)
+            .option("-T, --current-task", `${copy} the current task.`);
     }
 
     /**

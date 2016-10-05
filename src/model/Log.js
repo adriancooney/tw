@@ -26,8 +26,22 @@ export default class Log extends Model {
     }
 
     toString() {
-        return `${this.author.getNameInitialed()} logged ${this.duration.humanize()} ${this.date.calendar()}.` 
+
+
+        return `${this.author.getNameInitialed()} logged ${this.prettyDuration()} ${this.date.calendar()} to ${moment(this.date).add(this.duration).format("h:mm A")}.` 
             + (this.description ? `\n\n    ${this.description.split("\n").join("\n    ")}\n` : "");
+    }
+
+    prettyDuration() {
+        const minutes = this.duration.minutes();
+        const hours = this.duration.hours();
+        const duration = [];
+
+        // Display "X hours (and X minutes)"
+        if(hours > 0) duration.push(`${hours} hour${hours > 1 ? "s" : ""}`);
+        if(minutes > 0) duration.push(`${minutes} minute${minutes > 1 ? "s" : ""}`);
+
+        return duration.join(" and ");
     }
 
     /**

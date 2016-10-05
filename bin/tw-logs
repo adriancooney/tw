@@ -2,7 +2,8 @@
 import moment from "moment";
 import Promise from "bluebird";
 import Teamwork from "../src/Teamwork";
-import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import * as cli from "../src/cli";
+import { CLIError } from "../src/cli/error";
 import Command from "../src/library/Command";
 import { Debug } from "../src/library/Debug";
 
@@ -18,7 +19,7 @@ export default class LogsCommand extends Command {
             .option("--to <timestamp>", "View time logs up until a specific time (DD/MM/YYYY HH:mm).")
             .option("--all", "View all time logs created.");
 
-        this.addScopeOptions(command);
+        this.addScopeOptions(command, "View time logs for");
     }
 
     execute(options) {
@@ -34,8 +35,10 @@ export default class LogsCommand extends Command {
                 // The start of the date range (defaults to today)
                 from = moment().startOf("day").add(8, "hours"); // Moment's API is just beautiful.
 
-                if(options.yesterday) from = from.subtract(1, "day");
-                else if(options.week) from = from.subtract(1, "week");
+                if(options.yesterday) {
+                    to = moment(from);
+                    from = from.subtract(1, "day");
+                } else if(options.week) from = from.subtract(1, "week");
                 else if(options.month) from = from.subtract(1, "month");
                 else if(options.since) from = moment(options.since, "DD/MM/YYYY HH:mm");
             }
@@ -47,21 +50,25 @@ export default class LogsCommand extends Command {
                 sortOrder: "ASC"
             }), scope, from, to];
         }).spread((logs, scope, from, to) => {
+            const timeRange = (from && to ? `${scope ? " for " + this.color.scope(scope.toString()) : ""} since ${from.calendar()}` 
+                    + `${options.to ? " until " + to.calendar() : ""}` : "");
+
             // Log the task were getting the logs forr
-            TeamworkCLI.log(`Viewing ${options.everyone ? "everyones" : "your"} time logs`
-                + (from && to ? `${scope ? " for " + this.color.scope(scope.toString()) : ""} since ${from.calendar()}` 
-                    + `${options.to ? " until " + to.calendar() : ""}` : "") + ".\n");
+            cli.output.log(`Viewing ${options.everyone ? "everyones" : "your"} time logs${timeRange}.\n`);
 
             if(logs.length) {
-                logs.forEach((log, i) => {
-                    TeamworkCLI.log(` [#${i + 1}] ` + log.toString());
-                });
+                const total = logs.reduce((total, log, i) => {
+                    cli.output.log(` [#${i + 1}] ` + log.toString());
+                    return total.add(log.duration);
+                }, moment.duration());
+
+                cli.output.log(`Total ${total.asMinutes()} minutes logged${timeRange}.`);
             } else {
-                TeamworkCLI.log("No time logged.");
+                cli.output.log("No time logged.");
             }
         });
     }
 }
 
 if(require.main === module)
-    TeamworkCLI.run(LogsCommand);
+    cli.run(LogsCommand);

@@ -1,5 +1,5 @@
 import Promise from "bluebird";
-import Actions, { LogAction } from "./action";
+import Actions from "./action";
 import TeamworkAPI, { LoginError } from "./TeamworkAPI";
 import TeamworkParser from "./parser/TeamworkParser";
 import { Debug } from "./library/Debug";

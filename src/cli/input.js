@@ -4,7 +4,7 @@ import editor from "editor";
 import tmpdir from "os-tmpdir";
 import Promise from "bluebird";
 import inquirer from "inquirer";
-import { ClIError } from "./error";
+import { CLIError } from "./error";
 import * as output from "./output";
 import * as format from "./format";
 
@@ -118,6 +118,6 @@ export function confirm(confirmation) {
  */
 export function proceed(confirmation, cancellationMessage) {
     return confirm(confirmation).then((proceed) => {
-        if(!proceed) cancel(cancellationMessage);
+        if(!proceed) output.cancel(cancellationMessage);
     });
 }

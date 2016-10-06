@@ -30,6 +30,7 @@ export function run(command, argv = process.argv) {
         return request.apply(null, arguments).catch({
             code: "ENOTFOUND"
         }, err => {
+            debug(err.stack);
             throw new CLIError("Unable to connect to the internet. Please connect and try again.", "ENOTFOUND", false);
         }).finally(() => {
             output.loading(false);

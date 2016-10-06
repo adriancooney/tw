@@ -1,9 +1,12 @@
+/* eslint-disable */
 import fs from "fs";
 import path from "path";
 import rc from "rc";
 import Promise from "bluebird";
 import Config from "../library/Config";
 import { Debug } from "../library/Debug";
+import * as input from "./input";
+import * as output from "./output";
 
 const debug = Debug("tw:cli:config");
 

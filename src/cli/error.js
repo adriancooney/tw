@@ -1,3 +1,5 @@
+import * as format from "./format";
+
 /**
  * CLIError. Elegantly throw CLI errors which
  * allow you to exit the program with the appropriate code.
@@ -9,6 +11,6 @@ export class CLIError extends Error {
         this.code = code;
 
         if(showHelp)
-            this.message += ` Please see ${chalk.blue("--help")} for more information.`;
+            this.message += ` Please see ${format.color.option("--help")} for more information.`;
     }
 }

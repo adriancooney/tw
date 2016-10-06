@@ -1,8 +1,7 @@
-import chalk from "chalk";
 import Promise from "bluebird";
 import * as cli from "../cli";
 import { CLIError } from "../cli/error";
-import Teamwork, { ParserError } from "../Teamwork";
+import Teamwork from "../Teamwork";
 import { 
     Installation,
     Tasklist,
@@ -48,11 +47,11 @@ export default class Command {
 
         if(data) {
             switch(model) {
-                case "project":         return new Project(data); 
-                case "installation":    return new Installation(data);
-                case "user":            return new Person(data);
-                case "tasklist":        return new Tasklist(data);
-                case "task":            return new Task(data);
+            case "project":         return new Project(data); 
+            case "installation":    return new Installation(data);
+            case "user":            return new Person(data);
+            case "tasklist":        return new Tasklist(data);
+            case "task":            return new Task(data);
             }
         }
     }
@@ -104,7 +103,7 @@ export default class Command {
                 // Thank god for API consistency.
                 // Get the from the API the item type by Id. We query the API for the item to 
                 // see if it exists and to display information about what we just logged to.
-                return api[`get${capType}ByID`](Teamwork.parse(type, options[type]))
+                return api[`get${capType}ByID`](Teamwork.parse(type, options[type]));
             } else if(options[`current${capType}`]) {
                 let scope = this.getCurrent(type);
 

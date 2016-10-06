@@ -13,7 +13,7 @@
     "bin": "build/bin"
   },
   "scripts": {
-    "test": "DEBUG=tw* mocha --compilers js:babel-register test/*.js test/**/*.js",
+    "test": "DEBUG=tw* npm run lint && mocha --compilers js:babel-register test/*.js test/**/*.js",
     "build:bin:compile": "babel \"bin/tw*\" -d build",
     "build:bin:rename": "renamer -f \".js\" -r '' \"build/bin/*.js\" -v",
     "build:bin:fix-binary": "replace -q '#!/usr/bin/env babel-node.*' '#!/usr/bin/env node' build/bin -r",
@@ -36,6 +36,7 @@
   "devDependencies": {
     "babel": "^6.5.2",
     "babel-cli": "^6.14.0",
+    "babel-eslint": "^7.0.0",
     "babel-plugin-transform-export-extensions": "^6.8.0",
     "babel-preset-es2015": "^6.14.0",
     "babel-preset-es2016": "^6.11.3",
@@ -72,6 +73,7 @@
     ]
   },
   "eslintConfig": {
+    "parser": "babel-eslint",
     "rules": {
       "indent": [
         2,

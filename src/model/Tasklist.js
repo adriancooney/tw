@@ -12,15 +12,17 @@ export default class Tasklist extends Model {
      */
     constructor(data) {
         super({
-            id: true,
-            name: true,
-            description: false,
-            domain: false,
-            complete: false,
-            private: false,
-            uncompletedCount: false,
+            id: [Number, Model.fn],
+            name: [String, Model.fn],
+            description: String,
+            domain: String,
+            complete: Boolean,
+            private: Boolean,
+            uncompletedCount: Number,
             project: Project
         }, data);
+
+        this.title = this.name;
     }    
 
     /**

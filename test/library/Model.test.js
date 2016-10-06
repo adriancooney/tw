@@ -55,4 +55,18 @@ describe("Model", () => {
             assert.deepEqual([1, 2, 3], d.a);
         });
     });
+
+    describe.only(".getFieldOptions", () => {
+        it("should not pick out any options from 0", () => {
+            assert.deepEqual(Model.getFieldOptions(0), {
+                required: false
+            });
+        });
+
+        it("should pick out options", () => {
+            assert.deepEqual(Model.getFieldOptions(Model.required), {
+                required: true
+            });
+        });
+    });
 });

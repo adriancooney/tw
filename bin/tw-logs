@@ -7,6 +7,8 @@ import { CLIError } from "../src/cli/error";
 import Command from "../src/library/Command";
 import { Debug } from "../src/library/Debug";
 
+const debug = Debug("tw:cli:logs");
+
 export default class LogsCommand extends Command {
     setup(command) {
         command
@@ -15,6 +17,7 @@ export default class LogsCommand extends Command {
             .option("--yesterday", "View time logs created yesterday.")
             .option("--week", "View time logs created within the last week.")
             .option("--month", "View time logs created within the last month.")
+            .option("--date <date>", "View time logs for a specific date.")
             .option("--since <timestamp>", "View time logs since a specific time (DD/MM/YYYY HH:mm).")
             .option("--to <timestamp>", "View time logs up until a specific time (DD/MM/YYYY HH:mm).")
             .option("--all", "View all time logs created.");
@@ -41,7 +44,13 @@ export default class LogsCommand extends Command {
                 } else if(options.week) from = from.subtract(1, "week");
                 else if(options.month) from = from.subtract(1, "month");
                 else if(options.since) from = moment(options.since, "DD/MM/YYYY HH:mm");
+                else if(options.date) {
+                    from = moment(options.date, "D/M/YY");
+                    to = moment(from).add(1, "day");
+                }
             }
+
+            debug("Getting time logs from %s to %s.", from.format(), to.format());
 
             // Get the tasks
             return [api.getLogs(scope, {
@@ -50,19 +59,25 @@ export default class LogsCommand extends Command {
                 sortOrder: "ASC"
             }), scope, from, to];
         }).spread((logs, scope, from, to) => {
-            const timeRange = (from && to ? `${scope ? " for " + this.color.scope(scope.toString()) : ""} since ${from.calendar()}` 
-                    + `${options.to ? " until " + to.calendar() : ""}` : "");
+            const timeRange = (from && to ? `${scope ? " for " + this.color.scope(scope.toString()) : ""} since ${from.calendar().toLowerCase()}` 
+                    + `${options.to ? " until " + to.calendar().toLowerCase() : ""}` : "");
 
             // Log the task were getting the logs forr
             cli.output.log(`Viewing ${options.everyone ? "everyones" : "your"} time logs${timeRange}.\n`);
 
             if(logs.length) {
                 const total = logs.reduce((total, log, i) => {
-                    cli.output.log(` [#${i + 1}] ` + log.toString());
+                    let logTarget = log.task || log.tasklist || log.project || scope;
+                    let logOutput = this.color.yellow(`${cli.format.getScopeType(logTarget).toLowerCase()} ${logTarget.title}\n`);
+
+                    logOutput += `${log.author.getNameInitialed()} logged ${cli.format.prettyDuration(log.duration)} ${log.date.calendar().toLowerCase()}\n\n`;
+
+                    logOutput += cli.format.indent(log.description, cli.format.tab) + "\n";
+                    cli.output.log(logOutput);
                     return total.add(log.duration);
                 }, moment.duration());
 
-                cli.output.log(`Total ${total.asMinutes()} minutes logged${timeRange}.`);
+                cli.output.log(`Total ${cli.format.prettyDuration(total)} minutes logged${timeRange}.`);
             } else {
                 cli.output.log("No time logged.");
             }

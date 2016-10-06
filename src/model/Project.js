@@ -14,17 +14,19 @@ export default class Project extends Model {
      */
     constructor(data) {
         super({
-            id: true,
-            name: true,
-            description: false,
-            domain: false,
-            createdAt: moment,
+            id: [Number, Model.required],
+            name: [String, Model.required],
+            description: String,
+            domain: String,
+            createdAt: [moment, Model.fn],
             company: Company,
             tags: Tag,
-            logo: false,
-            status: false,
-            starred: false
+            logo: String,
+            status: String,
+            starred: Boolean
         }, data);
+
+        this.title = this.name;
     }
 
     /**

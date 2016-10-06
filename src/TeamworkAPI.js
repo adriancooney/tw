@@ -49,8 +49,10 @@ export default class TeamworkAPI {
             }, (err, response, body) => {
                 if(err) reject(err);
                 else {
-                    if(response.statusCode >= 200 && response.statusCode < 300) resolve({ body, response, url });
-                    else {
+                    if(response.statusCode >= 200 && response.statusCode < 300) {
+                        debug(JSON.stringify(body, null, 2));
+                        resolve({ body, response, url });
+                    } else {
                         debug("%s Error %j", response.statusCode, body);
                         reject(new HTTPError(response.statusCode, null, url));
                     }
@@ -310,7 +312,7 @@ export default class TeamworkAPI {
 
         return this.request("GET", url, undefined, { query }).then(({ body }) => {
             return (body["time-entries"] || []).map((entry) => {
-                return new Log({
+                const data = {
                     id: parseInt(entry.id),
                     description: entry.description,
                     date: entry.date,
@@ -326,19 +328,23 @@ export default class TeamworkAPI {
                         id: parseInt(entry["project-id"]),
                         name: entry["project-name"]
                     },
-                    tasklist: {
-                        id: parseInt(entry["todo-list-id"]),
-                        name: entry["todo-list-name"]
-                    },
-                    task: {
-                        id: parseInt(entry["todo-item-id"]),
-                        title: entry["todo-item-name"]
-                    },
                     company: {
                         id: entry["company-id"],
                         name: entry["company-name"]
                     }
-                });
+                };
+
+                if(entry["todo-list-id"]) data.tasklist = {
+                    id: parseInt(entry["todo-list-id"]),
+                    name: entry["todo-list-name"]
+                };
+
+                if(entry["todo-item-id"]) data.task = {
+                    id: parseInt(entry["todo-item-id"]),
+                    title: entry["todo-item-name"]
+                };
+
+                return new Log(data);
             });
         });
     }

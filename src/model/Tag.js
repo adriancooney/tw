@@ -3,9 +3,9 @@ import Model from "../library/Model";
 export default class Tag extends Model {
     constructor(data) {
         super({
-            id: true,
-            name: true,
-            color: false
+            id: [Number, Model.required],
+            name: [String, Model.required],
+            color: String
         }, data);
     }
 

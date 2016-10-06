@@ -1,7 +1,7 @@
 import moment from "moment";
 import Promise from "bluebird";
 import Teamwork from "../../src/Teamwork";
-import TeamworkCLI from "../../src/TeamworkCLI";
+import * as cli from "../../src/cli";
 import Config from "../../src/library/Config";
 import { Log, Person, Task } from "../../src/model";
 import { Debug } from "../../src/library/Debug";
@@ -38,7 +38,7 @@ export const api = new Teamwork("the-cake-is-a-lie", "valve.teamwork.com");
 export const currentUser = data.person(1);
 
 // Notify our test creators that they cannot use this.
-TeamworkCLI.promptWithEditor = () => {
+cli.input.promptWithEditor = () => {
     throw new Error("TestError: Cannot prompt with editor in tests. Please write your tests to avoid encountering this. It is tested seperately and can be assumed to work.");
 };
 

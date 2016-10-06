@@ -40,6 +40,13 @@ To keep things simple, Teamwork CLI uses `npm` (on top of other CLI tools) to bu
 
     $ DEBUG=tw tw status
 
+### Color Scheme & Decoration
+|Color|Item|Decoration|
+|:---:|:---:|:---:|
+|Yellow|Project|Underline|
+|Cyan|Task|-|
+|
+
 
   [package]: package.json
   [debug]: https://github.com/visionmedia/debug

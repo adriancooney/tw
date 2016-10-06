@@ -3,8 +3,8 @@ import Model from "../library/Model";
 export default class Company extends Model {
     constructor(data) {
         super({
-            name: false,
-            id: true
+            name: String,
+            id: [Number, Model.required]
         }, data);
     }
 

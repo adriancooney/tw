@@ -1,4 +1,8 @@
 export default class Model {
+    static property = 0;
+    static required = 1;
+    static fn = 2; // Flag will tells us type is function and not constructor (i.e. no new)
+
     /**
      * Model constructor.
      *
@@ -24,33 +28,35 @@ export default class Model {
         this.constructor.descriptor = descriptor;
 
         Object.keys(descriptor).forEach((key) => {
-            var value = descriptor[key];
-                
-            var required = false,
-                type = null;
+            const field = descriptor[key];
+            let fieldOptions = {};
 
-            if(typeof value === "boolean") required = value;
-            else if(Array.isArray(value)) required = value[0], type = value[1];
-            else if(typeof value === "function") type = value;
+            if(typeof field === "function") fieldOptions.type = field;
+            else if(Array.isArray(field) && field.length === 2 && typeof field[0] === "function" && typeof field[1] === "number") {
+                // Allow for array contains [type, flags]
+                fieldOptions.type = field[0];
 
-            var input = data[key];
+                // Expand the flags to the field options object
+                Model.getFieldOptions(field[1], fieldOptions);
+            } else throw new Error(`Invalid field descriptor passed to ${this.constructor.name}. Must be flags or [flags, Class].`);
+
+            let input = data[key];
 
             // Check if required
-            if(required && typeof input === "undefined") throw new Error(`Required field "${key}" not found.`);
+            if(fieldOptions.required && typeof input === "undefined") 
+                throw new Error(`Required field "${key}" not found.`);
 
-            // Coercion
-            if(typeof input !== "undefined" && type) {
+            // Coercion of Model types, otherwise just call the function with the input
+            if(typeof input !== "undefined") {
                 // Coerce each item in an array
-                if(Array.isArray(input)) {
-                    if(input.length) {
-                        input = input.map((item) => {
-                            if(type.prototype instanceof Model) return new type(item);
-                            else return type.call(null, item);
-                        });
-                    }
+                if(Array.isArray(input) && input.length) {
+                    input = input.map((item) => {
+                        if(fieldOptions.fn) return fieldOptions.type.call(null, item);
+                        else return new fieldOptions.type(item);
+                    });
                 } else {
-                    if(type.prototype instanceof Model) input = new type(input);
-                    else input = type.call(null, input);
+                    if(fieldOptions.fn) return fieldOptions.type.call(null, input);
+                    else return new fieldOptions.type(input);
                 }
             }
 
@@ -63,5 +69,11 @@ export default class Model {
             object[key] = this[key];
             return object;
         }, {});
+    }
+
+    static getFieldOptions(flags, options = {}) {
+        options.required = (flags & Model.required) === Model.required;
+        options.fn = (flags & Model.fn) === Model.fn;
+        return options;
     }
 }

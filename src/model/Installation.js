@@ -5,12 +5,12 @@ import Teamwork from "../Teamwork";
 export default class Installation extends Model {
     constructor(data) {
         super({
-            domain: true,
-            name: false,
-            url: false,
-            projectsEnabled: false,
-            chatEnabled: false,
-            deskEnabled: false,
+            domain: [String, Model.required],
+            name: String,
+            url: String,
+            projectsEnabled: Boolean,
+            chatEnabled: Boolean,
+            deskEnabled: Boolean,
             company: Company
         }, data);
     }

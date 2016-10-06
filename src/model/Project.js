@@ -18,7 +18,7 @@ export default class Project extends Model {
             name: [String, Model.required],
             description: String,
             domain: String,
-            createdAt: [moment, Model.fn],
+            createdAt: [moment, Model.callable],
             company: Company,
             tags: Tag,
             logo: String,

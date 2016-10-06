@@ -5,13 +5,12 @@ import LogCommand from "../../bin/tw-log";
 import { execute, api, match, data } from "./";
 
 describe("tw-log", () => {
-    it("-d 2h -t 42144 -m 'Hello world!'", () => {
+    it.only("-d 2h -t 42144 -m 'Hello world!'", () => {
         const task = 42144;
         const duration = "2h";
         const message = "Hello world!";
 
         const mock = sinon.mock(api);
-        const expectations = [];
 
         // GET /tasks/42144.json
         // Get's the item
@@ -22,8 +21,7 @@ describe("tw-log", () => {
 
         // POST /tasks/42144/time_entries.json
         // Log the time.
-        mock.expects("logToTask")
-            .once()
+        const expectation = mock.expects("logToTask")
             .withExactArgs(
                 // Ensure task object has the same ID
                 sinon.match.has("id", task),

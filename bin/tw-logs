@@ -59,11 +59,20 @@ export default class LogsCommand extends Command {
                 sortOrder: "ASC"
             }), scope, from, to];
         }).spread((logs, scope, from, to) => {
-            const timeRange = (from && to ? `${scope ? " for " + this.color.scope(scope.toString()) : ""} since ${from.calendar().toLowerCase()}` 
-                    + `${options.to ? " until " + to.calendar().toLowerCase() : ""}` : "");
+            let header = `Viewing ${options.everyone ? "everyones" : "your"} time logs`
+
+            if(scope)
+                header += " for " + this.color.scope(scope.toString());
+
+            if(from && to) {
+                header += ` from ${from.calendar().toLowerCase()}` ;
+
+                if(options.to)
+                    header += " to " + to.calendar().toLowerCase();
+            }
 
             // Log the task were getting the logs forr
-            cli.output.log(`Viewing ${options.everyone ? "everyones" : "your"} time logs${timeRange}.\n`);
+            cli.output.log(header + ".\n");
 
             if(logs.length) {
                 const total = logs.reduce((total, log, i) => {
@@ -77,7 +86,7 @@ export default class LogsCommand extends Command {
                     return total.add(log.duration);
                 }, moment.duration());
 
-                cli.output.log(`Total ${cli.format.prettyDuration(total)} minutes logged${timeRange}.`);
+                cli.output.log(`Total ${cli.format.prettyDuration(total)} minutes logged.`);
             } else {
                 cli.output.log("No time logged.");
             }

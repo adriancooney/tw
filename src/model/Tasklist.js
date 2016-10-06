@@ -12,8 +12,8 @@ export default class Tasklist extends Model {
      */
     constructor(data) {
         super({
-            id: [Number, Model.fn],
-            name: [String, Model.fn],
+            id: [Number, Model.callable],
+            name: [String, Model.callable],
             description: String,
             domain: String,
             complete: Boolean,

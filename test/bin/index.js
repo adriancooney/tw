@@ -6,7 +6,7 @@ import Config from "../../src/library/Config";
 import { Log, Person, Task } from "../../src/model";
 import { Debug } from "../../src/library/Debug";
 
-const debug = Debug("tw:test");
+const debug = Debug("tw:test:bin");
 
 // Dummy data creators
 export const data = {

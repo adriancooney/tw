@@ -1,7 +1,7 @@
 export default class Model {
     static property = 0;
     static required = 1;
-    static fn = 2; // Flag will tells us type is function and not constructor (i.e. no new)
+    static callable = 2; // Flag will tells us type is function and not constructor (i.e. no new)
 
     /**
      * Model constructor.
@@ -27,40 +27,33 @@ export default class Model {
     constructor(descriptor, data = {}) {
         this.constructor.descriptor = descriptor;
 
-        Object.keys(descriptor).forEach((key) => {
-            const field = descriptor[key];
-            let fieldOptions = {};
+        Object.keys(descriptor).forEach(fieldName => {
+            const field = descriptor[fieldName];
+            let input = data[fieldName];
+            let type = field, flags = Model.property;
 
-            if(typeof field === "function") fieldOptions.type = field;
-            else if(Array.isArray(field) && field.length === 2 && typeof field[0] === "function" && typeof field[1] === "number") {
+            if(Array.isArray(field)) {
                 // Allow for array contains [type, flags]
-                fieldOptions.type = field[0];
+                type = field[0];
+                flags = field[1];
+            }
 
-                // Expand the flags to the field options object
-                Model.getFieldOptions(field[1], fieldOptions);
-            } else throw new Error(`Invalid field descriptor passed to ${this.constructor.name}. Must be flags or [flags, Class].`);
+            // Expand the flags to an object
+            flags = Model.expandFieldFlags(flags);
 
-            let input = data[key];
-
-            // Check if required
-            if(fieldOptions.required && typeof input === "undefined") 
-                throw new Error(`Required field "${key}" not found.`);
+            // Validate the field based on the args (throws args if it fails)
+            Model.validateField(flags, fieldName, input); 
 
             // Coercion of Model types, otherwise just call the function with the input
             if(typeof input !== "undefined") {
                 // Coerce each item in an array
                 if(Array.isArray(input) && input.length) {
-                    input = input.map((item) => {
-                        if(fieldOptions.fn) return fieldOptions.type.call(null, item);
-                        else return new fieldOptions.type(item);
-                    });
-                } else {
-                    if(fieldOptions.fn) return fieldOptions.type.call(null, input);
-                    else return new fieldOptions.type(input);
-                }
+                    input = input.map(Model.coerceField.bind(null, type, flags));
+                } else input = Model.coerceField(type, flags, input);
             }
 
-            this[key] = input;
+            // Finally, save it to the model
+            this[fieldName] = input;
         });
     }
 
@@ -71,9 +64,23 @@ export default class Model {
         }, {});
     }
 
-    static getFieldOptions(flags, options = {}) {
-        options.required = (flags & Model.required) === Model.required;
-        options.fn = (flags & Model.fn) === Model.fn;
-        return options;
+    static validateField(flags, fieldName, value) {
+        if(flags.required && typeof value === "undefined")
+            throw new Error(`Required field "${fieldName}" not found.`);
+    }
+
+    static coerceField(type, flags, value) {
+        if(type === "string" || type === String) return value.toString();
+        else if(type === "number" || type === Number) return parseInt(value);
+        else if(type === "boolean" || type === Boolean) return !!value;
+        else if(flags.callable) return type(value);
+        else return new type(value);
+    }
+
+    static expandFieldFlags(flags) {
+        return {
+            required: (flags & Model.required) === Model.required,
+            callable: (flags & Model.callable) === Model.callable
+        };
     }
 }

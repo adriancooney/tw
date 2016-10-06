@@ -1,15 +1,11 @@
 #!/usr/bin/env babel-node --
 import moment from "moment";
 import handlebars from "handlebars";
-import Promise from "bluebird";
 import Teamwork from "../src/Teamwork";
 import * as cli from "../src/cli";
 import { CLIError } from "../src/cli/error";
 import Command from "../src/library/Command";
-import { Debug } from "../src/library/Debug";
 import { Log } from "../src/model";
-
-const debug = Debug("tw:cmd:log");
 
 export default class LogCommand extends Command {
     setup(command) {
@@ -17,7 +13,7 @@ export default class LogCommand extends Command {
             .description("Log time to a project, tasklist or task.")
             .option("-d, --duration <duration>", "Specify the duration of the log.")
             .option("-F, --fill", "Log the time since your last log today.")
-            .option("-m, --message <message>", "Specify the log message.")
+            .option("-m, --message <message>", "Specify the log message.");
 
         // Add the scoep selector options -tsp, -TSP
         // Example: "Log the time to a project"
@@ -132,13 +128,13 @@ export default class LogCommand extends Command {
 
             if(options.prompt) {
                 let confirmation = `You are about to log ${this.color.duration(duration.humanize())} to ${this.color.cyan(item.toString())}`;
-                if(options.time) confirmation += ` (starting ${offset.calendar()})`
-                confirmation += ".\nDo you wish to continue?"
+                if(options.time) confirmation += ` (starting ${offset.calendar()})`;
+                confirmation += ".\nDo you wish to continue?";
 
-                const cancellation = `Log aborted.`
+                const cancellation = `Log aborted.`;
 
                 // Confirm the log they're about to make
-                return cli.input.proceed(confirmation, cancellation).then((proceed) => {
+                return cli.input.proceed(confirmation, cancellation).then(() => {
                     return [api, item, duration, offset, message];
                 });
             } else return [api, item, duration, offset, message];

@@ -1,96 +1,106 @@
 #!/usr/bin/env babel-node
-
-import program from "commander";
 import Promise from "bluebird";
 import Teamwork from "../src/Teamwork";
-import TeamworkCLI, { CLIError } from "../src/TeamworkCLI";
+import * as cli from "../src/cli";
+import { CLIError } from "../src/cli/error";
+import Command from "../src/library/Command";
 import { Debug } from "../src/library/Debug";
 import { Installation } from "../src/model/";
 
 const debug = Debug("tw:cmd:login");
 
-TeamworkCLI.command(() => {
-    return Promise.try(() => {
-        program
-            .option("-e, --email <email>", "Your Teamwork login email.", TeamworkCLI.validateInput.bind(null, Teamwork.validateEmail))
+export default class LoginCommand extends Command {
+    setup(command) {
+        command
+            .option("-e, --email <email>", "Your Teamwork login email.", cli.input.validateInput.bind(null, Teamwork.validateEmail))
             .option("-p, --password <password>", "Your Teamwork login password")
             .option("-a, --auth <auth>", "Your Teamwork authorization key.")
-            .option("-i, --installation <installation>", "Your Teamwork installation address.", Installation.parse)
-            .parse(process.argv);
+            .option("-i, --installation <installation>", "Your Teamwork installation address.", Installation.parse);
+    }
 
-        var details = {};
+    execute({ email, password, auth, installation }) {
+        return Promise.try(() => {
+            if(!auth && !email && !password) {
+                // Prompt for login details
+                return this.prompt();
+            }
 
-        if(!program.auth && !program.email && !program.password) {
-            // Prompt for login details
-            return TeamworkCLI.prompt([{
-                type: "input",
-                message: "Email",
-                name: "email",
-                validate: TeamworkCLI.inquirerValidateInput.bind(null, Teamwork.validateEmail)
-            }, {
-                type: "password",
-                message: "Password",
-                name: "password"
-            }]).then((answers) => {
-                details = answers;
-
-                // Find installations associated with the account
-                // and ask which one they want to pick
-                return Teamwork.getAccounts(answers.email.trim(), answers.password.trim());
-            }).then((installations) => {
-                if(!installations.length) throw new CLIError("No accounts found.");
-
-                // Ask them to pick their installation
-                return TeamworkCLI.prompt({
-                    type: "list",
-                    name: "installation",
-                    message: "Installation",
-                    choices: installations.map((installation) => {
-                        return {
-                            name: installation.print(),
-                            value: installation
-                        };
-                    })
-                });
-            }).then((answers) => {
-                var installation = answers.installation;
-
-                // Login to the API
-                debug("Logging in from prompt: %s, %s", details.email, installation);
-                return Teamwork.login(details.email, details.password, installation);
-            });
-        } else {
             // Ensure we have an installation
-            if(!program.installation) TeamworkCLI.fail(`The ${TeamworkCLI.color.blue("--installation")} option is required when logging in with a email/password or auth key.`);
+            if(!installation) 
+                throw new CLIError(`The ${this.color.option("--installation")} option is required when logging in with a email/password or auth key.`);
 
             // TODO: If passed in installation by command line, get the full installation details from the API
-            if(program.auth) {
+            if(auth) {
                 // If were passed an Auth key, login with the auth key
-                debug("Logging in from passed auth key: %s, %s", program.auth, program.installation.domain);
-                return Teamwork.loginWithAuth(program.auth, program.installation);
-            } else if(program.email && program.password) {
+                debug("Logging in from passed auth key: %s, %s", auth, installation.domain);
+                return Teamwork.loginWithAuth(auth, installation);
+            } if(email && password) {
                 // Login with passed details
-                debug("Logging via passed in credentials: %s, %s", program.email, program.installation.domain);
-                return Teamwork.login(program.email, program.password, program.installation.domain);
+                debug("Logging via passed in credentials: %s, %s", email, installation.domain);
+                return Teamwork.login(email, password, installation.domain);
             } else {
-                throw new CLIError(`Please pass either a ${TeamworkCLI.color.blue("--auth")} key or a ${Teamwork.color.blue("--email")} and ${Teamwork.color.blue("--password")}.`);
+                throw new CLIError(`Please pass either a ${this.color.option("--auth")} key `
+                    + `or a ${this.color.option("--email")} and ${this.color.option("--password")}.`);
             }
-        }
-    }).then((api) => {
-        // Save the details and auth key to their user config
-        return api.getProfile().then((profile) => {
+        }).then((api) => {
+            // Save the details and auth key to their user config
+            return [api, api.getProfile()];
+        }).spread((api, profile) => {
             // Save the profile and installation
-            TeamworkCLI.setCurrent("user", profile);
-            TeamworkCLI.setCurrent("installation", api.installation);
+            this.setCurrent("user", profile);
+            this.setCurrent("installation", api.installation);
 
             // Save the API
-            TeamworkCLI.setAPI(api);
+            // TeamworkCLI.setAPI(api);
 
             // Write the config
-            return TeamworkCLI.save();
+            // return TeamworkCLI.save();
+            console.log("TODO: SAVE THE API.");
+        }).then(() => {
+            const user = this.config.get("user");
+            cli.output.log(`Successfully logged in. Welcome back ${this.color.person(user.getNameInitialed())}`);
         });
-    }).then(() => {
-        var user = TeamworkCLI.config.get("user");
-        TeamworkCLI.log(`Successfully logged in. Welcome back ${TeamworkCLI.color.green(user.getNameInitialed())}`);
-    });
-});
+    }
+
+    prompt() {
+        return cli.input.prompt([{
+            type: "input",
+            message: "Email",
+            name: "email",
+            validate: cli.input.inquirerValidateInput.bind(null, Teamwork.validateEmail)
+        }, {
+            type: "password",
+            message: "Password",
+            name: "password"
+        }]).then((details) => {
+            // Find installations associated with the account
+            // and ask which one they want to pick
+            return [details, Teamwork.getAccounts(details.email.trim(), details.password.trim())];
+        }).spread((details, installations) => {
+            if(!installations.length) 
+                throw new CLIError("No accounts found.");
+
+            // Ask them to pick their installation
+            return [details, cli.input.prompt({
+                type: "list",
+                name: "installation",
+                message: "Installation",
+                choices: installations.map((installation) => {
+                    return {
+                        name: installation.toString(),
+                        value: installation
+                    };
+                })
+            })];
+        }).spread((details, answers) => {
+            var installation = answers.installation;
+
+            // Login to the API
+            debug("Logging in from prompt: %s, %s", details.email, installation);
+            return Teamwork.login(details.email, details.password, installation);
+        });
+    }
+}
+
+if(require.main === module)
+    cli.run(LoginCommand);

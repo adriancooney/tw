@@ -1,9 +1,6 @@
 #!/usr/bin/env babel-node --
 import moment from "moment";
-import Promise from "bluebird";
-import Teamwork from "../src/Teamwork";
 import * as cli from "../src/cli";
-import { CLIError } from "../src/cli/error";
 import Command from "../src/library/Command";
 import { Debug } from "../src/library/Debug";
 
@@ -59,13 +56,13 @@ export default class LogsCommand extends Command {
                 sortOrder: "ASC"
             }), scope, from, to];
         }).spread((logs, scope, from, to) => {
-            let header = `Viewing ${options.everyone ? "everyones" : "your"} time logs`
+            let header = `Viewing ${options.everyone ? "everyones" : "your"} time logs`;
 
             if(scope)
                 header += " for " + this.color.scope(scope.toString());
 
             if(from && to) {
-                header += ` from ${from.calendar().toLowerCase()}` ;
+                header += ` from ${from.calendar().toLowerCase()}`;
 
                 if(options.to)
                     header += " to " + to.calendar().toLowerCase();
@@ -75,7 +72,7 @@ export default class LogsCommand extends Command {
             cli.output.log(header + ".\n");
 
             if(logs.length) {
-                const total = logs.reduce((total, log, i) => {
+                const total = logs.reduce((total, log) => {
                     let logTarget = log.task || log.tasklist || log.project || scope;
                     let logOutput = this.color.yellow(`${cli.format.getScopeType(logTarget).toLowerCase()} ${logTarget.title}\n`);
 

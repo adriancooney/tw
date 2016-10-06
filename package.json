@@ -22,7 +22,7 @@
     "build:parser": "pegjs --allowed-start-rules duration,task,progress,commit,installation src/parser/TeamworkParser.pegjs",
     "build:src": "babel src -d build/src",
     "build": "npm run lint && npm run clean && npm run build:src && npm run build:bin",
-    "lint:bin": "eslint bin",
+    "lint:bin": "eslint bin/*",
     "lint:src": "eslint src --ignore-pattern src/parser/TeamworkParser.js",
     "lint": "npm run lint:bin && npm run lint:src",
     "clean": "rimraf build/",

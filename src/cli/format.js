@@ -9,6 +9,7 @@ color.option = color.blue;
 color.command = color.blue;
 color.duration = color.magenta;
 color.scope = color.cyan;
+color.person = color.green;
 
 /**
  * Indent a block of text by characters.

@@ -48,7 +48,7 @@ export function inquirerValidateInput(validator, ...input) {
  * @return {Promise} -> {Answers}
  */
 export function prompt(questions) {
-    return inquirer.prompt(questions);
+    return Promise.resolve(inquirer.prompt(questions));
 }
 
 /**

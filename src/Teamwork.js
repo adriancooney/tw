@@ -111,17 +111,6 @@ export default class Teamwork extends TeamworkAPI {
     }
 
     /**
-     * Convert the API to JSON.
-     * @return {Object}
-     */
-    toJSON() {
-        var api = super.toJSON();
-        api.actions = this.actions;
-        api.className = "Teamwork";
-        return api;
-    }
-
-    /**
      * Parse an allowed rule from the TeamworkParser.
      * @param  {String} rule    duration,task,progress,commit,installation
      * @param  {String} content The content to parse from.

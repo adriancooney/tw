@@ -49,16 +49,9 @@ export default class LoginCommand extends Command {
             // Save the profile and installation
             this.setCurrent("user", profile);
             this.setCurrent("installation", api.installation);
+            this.config.set("api", api);
 
-            // Save the API
-            // TeamworkCLI.setAPI(api);
-
-            // Write the config
-            // return TeamworkCLI.save();
-            console.log("TODO: SAVE THE API.");
-        }).then(() => {
-            const user = this.config.get("user");
-            cli.output.log(`Successfully logged in. Welcome back ${this.color.person(user.getNameInitialed())}`);
+            cli.output.log(`Successfully logged in. Welcome back ${this.color.person(profile.getNameInitialed())}`);
         });
     }
 

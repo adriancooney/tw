@@ -60,7 +60,8 @@ export function run(command, argv = process.argv) {
 
         // Execute the command
         return commandInst.execute(options).then(() => {
-            debug("saving config file");
+            debug("Writing config to disk");
+            return state.writeConfig(config);
         });
     }).catch(output.fail);
 }

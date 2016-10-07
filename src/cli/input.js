@@ -121,3 +121,44 @@ export function proceed(confirmation, cancellationMessage) {
         if(!proceed) output.cancel(cancellationMessage);
     });
 }
+
+
+/**
+ * Choose the current X.
+ * @param  {Boolean} list    Show as list. (Does not allow you to choose)
+ * @param  {String} message The message to show in the prompt.
+ * @param  {String} type    The name of list.
+ * @param  {Array} items   Array of objects that have a `toListItem` implemented.
+ * @return {Promise}         
+ */
+// export function chooseCurrentItem(list, message, type, items) {
+//     if(!list) {
+//         var current = TeamworkCLI.getCurrent(type);
+
+//         return prompt([{
+//             type: "list",
+//             message: message,
+//             name: type,
+//             choices: items.map((item) => {
+//                 var str = item.print();
+
+//                 // Highlight the current item
+//                 if(current && item.id === current.id) 
+//                     str = `${TeamworkCLI.color.yellow(str)} ${TeamworkCLI.color.blue("(current)")}`;
+
+//                 return {
+//                     name: str,
+//                     value: item
+//                 };
+//             })
+//         }]).then((answers) => {
+//             return TeamworkCLI.save(answers);
+//         });
+//     } else {
+//         return Promise.try(() => {
+//             items.forEach((item) => {
+//                 TeamworkCLI.log(item.print());
+//             });
+//         });
+//     }
+// }

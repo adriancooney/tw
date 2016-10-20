@@ -6,7 +6,17 @@ import { Debug } from "./library/Debug";
 
 const debug = Debug("tw");
 
+/**
+ * Class for communicates to Teamwork.
+ * @extends TeamworkAPI
+ */
 export default class Teamwork extends TeamworkAPI {
+    /**
+     * Create a new Teamwork instance.
+     * @param  {String} auth         Auth key,
+     * @param  {Installation} installation The target installation.
+     * @param  {Object} actions      Actions.
+     */
     constructor(auth, installation, actions = {}) {
         super(auth, installation);
 

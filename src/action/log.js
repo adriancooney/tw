@@ -9,6 +9,7 @@ export default class LogAction extends Action {
     }
 
     commit(api) {
+        // We directly call .log from the prototype because the API could 
         return TeamworkAPI.prototype.log.call(api, this.scope, this.user, this.log);
     }
 

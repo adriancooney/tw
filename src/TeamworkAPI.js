@@ -14,9 +14,13 @@ import {
 
 const debug = Debug("tw:api");
 
+/** 
+ * TeamworkAPI
+ */
 export default class TeamworkAPI {
     /**
      * Create an authorized Teamwork API interface.
+     * @class
      * @param  {String} auth The auth key.
      */
     constructor(auth, installation) {
@@ -283,11 +287,11 @@ export default class TeamworkAPI {
     /**
      * Get time logs for a task.
      * @param  {Project|Task} scope The task, project or optionally, neither (i.e. installation wide)
-     * @param  {User} options.user Get only time logs for a specific user (optional).
-     * @param  {Number} options.page The page number (defaults to 1)
-     * @param  {String} options.sort "ASC"|"DESC"
-     * @param  {Moment} options.from The start date to get logs for.
-     * @param  {Moment} options.to   The end date to get logs for.
+     * @param  {User} $1.user Get only time logs for a specific user (optional).
+     * @param  {Number} $1.page The page number (defaults to 1)
+     * @param  {String} $1.sort "ASC"|"DESC"
+     * @param  {Moment} $1.from The start date to get logs for.
+     * @param  {Moment} $1.to   The end date to get logs for.
      * @return {Promise} -> {Array[Log]}
      */
     getLogs(scope, { user, page, sort, sortOrder, from, to } = {}) {

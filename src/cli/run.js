@@ -59,7 +59,7 @@ export function run(command, argv = process.argv) {
         options.args = commander.args;
 
         // Execute the command
-        return commandInst.execute(options).then(() => {
+        return Promise.resolve(commandInst.execute(options)).then(() => {
             debug("Writing config to disk");
             return state.writeConfig(config);
         });

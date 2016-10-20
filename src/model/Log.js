@@ -6,7 +6,12 @@ import Tasklist from "./Tasklist";
 import Project from "./Project";
 import Company from "./Company";
 
+/**
+ * Log Model
+ * @name model.Log
+ */
 export default class Log extends Model {
+    /** const */
     constructor(data) {
         super({
             id: Number,
@@ -25,6 +30,10 @@ export default class Log extends Model {
         this.duration = data.duration || moment.duration(this.minutes, "m").add(moment.duration(this.hours, "h"));
     }
 
+    /**
+     * Convert the log to a human readable string.
+     * @memberof model.Log
+     */
     toString() {
         return `${this.author.getNameInitialed()} logged ${this.duration.humanize()} ${this.date.calendar()} to ${moment(this.date).add(this.duration).format("h:mm A")}.` 
             + (this.description ? `\n\n    ${this.description.split("\n").join("\n    ")}\n` : "");

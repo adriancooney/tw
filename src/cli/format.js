@@ -21,6 +21,11 @@ export function indent(block, chars = "# ") {
     return chars + block.split("\n").join("\n" + chars);
 }
 
+/**
+ * Like moment.duration().humanize() except more exact.
+ * @param  {moment.duration} duration 
+ * @return {String}
+ */
 export function prettyDuration(duration) {
     const minutes = duration.minutes();
     const hours = duration.hours();
@@ -33,6 +38,24 @@ export function prettyDuration(duration) {
     return duration.join(" and ");
 }
 
+/**
+ * Return the scope type (i.e. "Project", "Tasklist" or "Task")
+ * @param  {Project|Tasklist|Task} scope 
+ * @return {String}
+ */
 export function getScopeType(scope) {
     return scope.constructor.name;
+}
+
+/**
+ * Convert a list of strings in a nice comma seperated list.
+ * @param  {Array} list      List of items to join.
+ * @param  {String} seperator "and" or "or"
+ * @return {String}
+ */
+export function comma(list, seperator = "or") {
+    if(list.length == 1) return list;
+    else if(list.length === 2) return `${list[0]} ${seperator} ${list[1]}`;
+    else if(list.length === 3) return `${list[2]}, ${comma(list.slice(-2))}`;
+    else if(list.length > 3) return `${list.slice(0, -2).join(", ")} ${comma(list.slice(-2))}`;
 }

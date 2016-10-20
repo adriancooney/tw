@@ -70,15 +70,29 @@ export default class Command {
      * project, tasklist or task.
      * 
      * @param {commander} command
+     * @param {String}    copy      The text to put before "... the current project"
+     * @param {Array}     scopes    Array of scopes to include.
      */
-    addScopeOptions(command, copy) {
-        command
-            .option("-p, --project <project>", `${copy} a project.`)
-            .option("-s, --tasklist <tasklist>", `${copy} a tasklist.`)
-            .option("-t, --task <task>", `${copy} a task.`)
-            .option("-P, --current-project", `${copy} the current project.`)
-            .option("-S, --current-tasklist", `${copy} the current tasklist.`)
-            .option("-T, --current-task", `${copy} the current task.`);
+    addScopeOptions(command, copy, scopes = ["project", "tasklist", "task"]) {
+        const scopeOptions = [];
+        const currentScopeOptions = [];
+
+        if(scopes.includes("project")) {
+            scopeOptions.push(["-p, --project <project>", `${copy} a project.`])
+            currentScopeOptions.push(["-P, --current-project", `${copy} the current project.`]);
+        }
+
+        if(scopes.includes("tasklist")) {
+            scopeOptions.push(["-s, --tasklist <tasklist>", `${copy} a tasklist.`])
+            currentScopeOptions.push(["-S, --current-tasklist", `${copy} the current tasklist.`])
+        }
+
+        if(scopes.includes("task")) {
+            scopeOptions.push(["-t, --task <task>", `${copy} a task.`]);
+            currentScopeOptions.push(["-T, --current-task", `${copy} the current task.`]);
+        }
+
+        scopeOptions.concat(currentScopeOptions).forEach(([swi, text]) => command.option(swi, text));
     }
 
     /**
@@ -94,7 +108,7 @@ export default class Command {
 
             if(scope && (options[type] || options[`current${capType}`])) {
                 // Make sure they haven't specified more than one scope
-                throw new CLIError(`Clashing log targets. Please only specify a task ${this.color.option("-t")},`
+                throw new CLIError(`Clashing targets. Please only specify a task ${this.color.option("-t")},`
                     + ` tasklist ${this.color.option("-s")} or project ${this.color.option("-p")}.`);
             } else if(scope) return scope;
 
@@ -122,11 +136,11 @@ export default class Command {
      * @param  {Object}      options The options object received by commander.
      * @return {Promise}
      */
-    requireScopeFromOptions(api, options) {
+    requireScopeFromOptions(api, options, scopes = ["project", "tasklist", "task"]) {
         return this.getScopeFromOptions(api, options).then(scope => {
-            if(!scope)
-                throw new Error(`Please provide a target to log to with ${this.color.option("-t")},` 
-                    + ` tasklist ${this.color.option("-s")} or project ${this.color.option("-p")} switches.`);
+            if(!scope) {
+                throw new Error(`Please provide a target ${cli.format.comma(scopes)}.`);
+            }
 
             return scope;
         });

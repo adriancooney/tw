@@ -1,3 +1,7 @@
+/**
+ * Models
+ * @namespace model
+ */
 import Log from "./Log";
 import Tag from "./Tag";
 import Task from "./Task";

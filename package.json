@@ -24,9 +24,11 @@
     "build": "npm run lint && npm run clean && npm run build:src && npm run build:bin",
     "lint:bin": "eslint bin/*",
     "lint:src": "eslint src --ignore-pattern src/parser/TeamworkParser.js",
+    "lint:doc": "documentation lint src",
     "lint": "npm run lint:bin && npm run lint:src",
     "clean": "rimraf build/",
-    "prepublish": "npm run build"
+    "prepublish": "npm run build",
+    "doc": "documentation build src -f html -o doc && open doc/index.html"
   },
   "keywords": [
     "tw"
@@ -44,6 +46,7 @@
     "babel-preset-node6": "^11.0.0",
     "babel-register": "^6.14.0",
     "chai": "^3.5.0",
+    "documentation": "^4.0.0-beta10",
     "eslint": "^1.2.1",
     "mkdirp": "^0.5.1",
     "renamer": "^0.5.6",

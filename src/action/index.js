@@ -1,5 +1,1 @@
-import LogAction from "./LogAction";
-
-export {
-    LogAction
-};
+export * from "./log";

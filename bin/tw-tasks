@@ -5,8 +5,8 @@ import { CLIError } from "../src/cli/error";
 
 const TASK_WIDTH                = 105;
 const INDEX_NOTATION            = " {{i}}. ";
-const CHILD_MIDDLE_NOTATION     = " ├──";
-const CHILD_END_NOTATION        = " └──";
+const CHILD_MIDDLE_NOTATION     = " ├── ";
+const CHILD_END_NOTATION        = " └── ";
 const CHILD_OVERFLOW_NOTATION   = " |  ";
 const CHILD_WIDTH               = TASK_WIDTH - CHILD_MIDDLE_NOTATION.length;
 
@@ -30,11 +30,18 @@ export default class TasksCommand extends Command {
             cli.output.log(cli.output.scope(scope));
 
             this.listTasks(tasks, {
-                filter: options.filter ? this.createFilter(options.filter) : undefined
+                filter: options.filter ? this.createFilter(options.filter) : undefined,
+                completed: options.completed,
+                user: this.getCurrent("user")
             });
         });
     }
 
+    /**
+     * Create a filter from a string or throw an error if it fails.
+     * @param  {String} filter 
+     * @return {RegExp}
+     */
     createFilter(filter) {
         try {
             return RegExp(filter, "gi");
@@ -43,95 +50,79 @@ export default class TasksCommand extends Command {
         }
     }
 
+    /**
+     * Determine whether we should display a task given a filter. This traverses
+     * children to see if the filter matches, if it finds a matching child, it
+     * returns true.
+     * @param  {Task}   task   
+     * @param  {RegExp} filter 
+     * @return {Boolean}
+     */
     shouldShowTask(task, filter) {
         if(task.title.match(filter)) return true;
         if(task.subTasks) return task.subTasks.some(task => this.shouldShowTask(task, filter));
     }
 
-    listTasks(tasks, { filter, level = 0, recursive = true } = {}) {
+    getTaskMeta(task) {
+        // The meta information
+        let meta = [task.progress + "%"];
+
+        // Add assignee if any
+        if(task.assigned) meta.push(task.assigned.getNameInitialed());
+
+        return " (" + meta.join(", ") + ")";
+    }
+
+    /**
+     * List the tasks.
+     * @param  {Array} tasks             
+     * @param  {RegExp} options.filter    
+     * @param  {Boolean} options.completed Show whether task was completed or not.
+     * @param  {Number} options.level     The current indentation level of this list.
+     * @param  {Boolean} options.recursive List subtasks if there is any.
+     */
+    listTasks(tasks, { user, filter, completed, level = 0, recursive = true } = {}) {
         if(filter)
             tasks = tasks.filter(task => this.shouldShowTask(task, filter));
 
         tasks.forEach((task, i, tasks) => {
-            const index = `[${task.completed ? "X" : " "}] `;
-
-            let taskTitle = this.color.task(task.title);
-
-            // Add the meta information
-            taskTitle += ` (#${task.id}, ${task.progress}%)`;
-
-            if(task.description) {
-                taskTitle += `\n${cli.format.indent(task.description, cli.format.whitespace(2))}\n`;
-            }
-
-            // Resize the task title to fit TASK_WIDTH in columns
-            taskTitle = cli.format.resize(taskTitle, process.stdout.columns - 6 - index.length);
-
-            // Indent the block of text so that it's inline with the index
-            taskTitle = cli.format.alignIndent(index, taskTitle, level === 0 ? " |" : undefined);
+            let indentation = completed ? `[${task.completed ? cli.output.TICK : " "}] ` : "";
 
             if(level > 0) {
+                // Add the pipes
                 const isLastTask = i === tasks.length - 1;
-                const indentation = isLastTask ? CHILD_END_NOTATION : CHILD_MIDDLE_NOTATION;
-                taskTitle = cli.format.alignIndent(indentation, taskTitle, !isLastTask ? CHILD_OVERFLOW_NOTATION : undefined)
+                const indentNotation = isLastTask ? CHILD_END_NOTATION : CHILD_MIDDLE_NOTATION;
+
+                indentation = indentNotation + indentation;
 
                 if(level > 1)
-                    taskTitle = cli.format.indent(taskTitle, cli.format.whitespace(indentation.length));
+                    indentation = cli.format.whitespace(indentNotation.length) + indentation;
             }
 
-            // Highlight the filter if any
-            if(filter)
-                taskTitle = taskTitle.replace(filter, match => cli.output.highlight(match));
+            // Add the task ID to the start
+            indentation = `#${task.id} ` + indentation;
 
-            cli.output.log(taskTitle);
+            let taskTitle = task.title;
+            let meta = this.getTaskMeta(task);
 
-            if(recursive && task.subTasks)
-                this.listTasks(task.subTasks, { filter, recursive, level: level + 1 });
-        });
-    }
+            // Highlight the filter in the title if any passed
+            if(filter) taskTitle = taskTitle.replace(filter, match => cli.output.highlight(match));
 
-    logTasksOld(scope, tasks) {
-        // Flatten the task list
-        tasks = tasks.reduce((list, task) => {
-            list.push({ task, level: 0 });
+            // Colorize and cut the task title to (window size - meta)
+            taskTitle = cli.format.ellipsize(taskTitle, process.stdout.columns - meta.length - indentation.length - 6);
 
-            if(task.subTasks) {
-                list = list.concat(task.subTasks.map((t) => { return { task: t, level: 1}; }));
+            // Stylize the task
+            // TODO: Highlight overdue tasks in red
+            if(task.assigned && task.assigned.id === user.id) taskTitle = this.color.bold(this.color.magenta(taskTitle));
+            else if(task.completed) taskTitle = this.color.green(taskTitle);
+            else taskTitle = this.color.yellow(taskTitle);
+
+            cli.output.log(indentation + taskTitle + meta);
+
+            // Log the sub tasks if there is any
+            if(recursive && task.subTasks) {
+                this.listTasks(task.subTasks, { user, filter, completed, recursive, level: level + 1 });
             }
-
-            return list;
-        }, []);
-
-        if(options.filter) {
-            const filter = this.createFilter(options.filter);
-
-            // Filter the tasks 
-            tasks = tasks.filter(({ task }) => task.title.match(filter));
-        }
-
-
-        tasks.forEach(({ task, level }, i, tasks) => {
-            let index = INDEX_NOTATION.replace("{{i}}", i + 1);
-
-            // Resize the task title to fit TASK_WIDTH in columns
-            let taskTitle = cli.format.resize(task.title, level > 0 ? CHILD_WIDTH : TASK_WIDTH);
-
-            // Indent the block of text so that it's inline with the index
-            taskTitle = cli.format.indent(taskTitle, cli.format.whitespace(index.length));
-            taskTitle = index + taskTitle.substr(index.length);
-
-            // Grab the indent. This decides whether its a corner pipe or T pipe characters
-            if(i < (tasks.length - 1) && tasks[i + 1].level > 0) {
-                // We have a task with a task above and below it
-                taskTitle = CHILD_MIDDLE_NOTATION +
-                    cli.format.indent(taskTitle, CHILD_OVERFLOW).substr(CHILD_MIDDLE_NOTATION.length);
-            } else if(level > 0) {
-                // We have a task with just one task above it (none below)
-                taskTitle = CHILD_END_NOTATION + 
-                    cli.format.indent(taskTitle, cli.format.whitespace(CHILD_END_NOTATION.length)).substr(CHILD_END_NOTATION.length);
-            }
-
-            cli.output.log(taskTitle);
         });
     }
 }

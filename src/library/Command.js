@@ -1,6 +1,7 @@
 import Promise from "bluebird";
 import * as cli from "../cli";
 import { CLIError } from "../cli/error";
+import { Debug } from "./Debug";
 import Teamwork from "../Teamwork";
 import { 
     Installation,
@@ -9,6 +10,8 @@ import {
     Person,
     Task
 } from "../model";
+
+const debug = Debug("tw:command");
 
 export default class Command {
     constructor(command, config) {
@@ -102,6 +105,8 @@ export default class Command {
      * @return {Promise}
      */
     getScopeFromOptions(api, options) {
+        debug("getting scope from options");
+
         // Find the item they want to log the time to
         return ["task", "tasklist", "project"].reduce((scope, type) => {
             const capType = type[0].toUpperCase() + type.substr(1);
@@ -114,11 +119,15 @@ export default class Command {
 
             // They passed in an explicit task, tasklist or project
             if(options[type]) {
+                debug("getting %s %d from API", type, options[type]);
+
                 // Thank god for API consistency.
                 // Get the from the API the item type by Id. We query the API for the item to 
                 // see if it exists and to display information about what we just logged to.
                 return api[`get${capType}ByID`](Teamwork.parse(type, options[type]));
             } else if(options[`current${capType}`]) {
+                debug("getting current %s for scope", capType);
+                
                 let scope = this.getCurrent(type);
 
                 if(!scope)

@@ -74,7 +74,7 @@ export default class LogsCommand extends Command {
             if(logs.length) {
                 const total = logs.reduce((total, log) => {
                     let logTarget = log.task || log.tasklist || log.project || scope;
-                    let logOutput = this.color.yellow(`${cli.format.getScopeType(logTarget).toLowerCase()} ${logTarget.title}\n`);
+                    let logOutput = cli.output.scope(logTarget) + "\n";
 
                     logOutput += `${log.author.getNameInitialed()} logged ${cli.format.prettyDuration(log.duration)} ${log.date.calendar().toLowerCase()}\n\n`;
 

@@ -60,13 +60,15 @@
     "commander": "^2.9.0",
     "debug": "^2.2.0",
     "editor": "^1.0.0",
+    "ellipsize": "0.0.2",
     "handlebars": "^4.0.5",
     "inquirer": "^1.1.3",
     "moment": "^2.10.3",
     "open": "0.0.5",
     "os-tmpdir": "^1.0.1",
     "rc": "^1.0.3",
-    "request": "^2.58.0"
+    "request": "^2.58.0",
+    "word-wrap": "^1.1.0"
   },
   "babel": {
     "presets": [

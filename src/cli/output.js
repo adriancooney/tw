@@ -2,6 +2,9 @@ import inquirer from "inquirer";
 import { Debug } from "../library/debug";
 import { color } from "./format";
 
+// Export the theme
+export * from "./theme/default";
+
 const debug = Debug("tw:cli");
 
 /**

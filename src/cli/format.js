@@ -33,6 +33,7 @@ export function indent(block, chars = "# ") {
  * @return {String}        
  */
 export function fixLength(text, length) {
+    text = text.toString();
     const stripped = stripAnsi(text);
     if(stripped.length < length) return text + whitespace(length - stripped.length);
     else return text;

@@ -1,56 +1,26 @@
-#!/usr/bin/env babel-node
+#!/usr/bin/env babel-node --
+import Command from "../src/library/Command";
+import * as cli from "../src/cli";
+import { CLIError } from "../src/cli/error";
 
-import program from "commander";
-import TeamworkCLI from "../src/TeamworkCLI";
+export default class ProjectsCommand extends Command {
+    execute(options) {
+        return this.getAPI().then(api => {
+            return [api, api.getProjects()];
+        }).spread((api, projects) => {
+            cli.output.log(this.color.yellow(`${api.installation.name} (${api.installation.domain})`));
+            cli.output.log(cli.format.list(projects, project => {
+                const id = `#${cli.format.fixLength(project.id, 6)}`
+                let title = project.title;
 
-TeamworkCLI.command(() => {
-    program
-        .option("-l, --list", "Display projects as a static list.")
-        .option("--starred", "Display only starred projects")
-        .parse(process.argv);
+                if(project.starred) title = this.color.yellow(title + " " + cli.output.STAR);
+                else title = this.color.magenta(title);
 
-    return TeamworkCLI.getAPI().then((api) => {
-        return api.getProjects();
-    }).then((projects) => {
-        // Filter only the starred projects
-        if(program.starred) {
-            projects = projects.filter(project => project.starred);
-        }
+                return `${id} ${title}`;
+            }));
+        });
+    }
+}
 
-        // Sort projects by starred
-        projects.sort((project) => project.starred ? -1 : 1);
-
-        if(!program.list) {
-            // Get the current project so we can highlight it in the list
-            var current = TeamworkCLI.getCurrent("project");
-
-            return TeamworkCLI.prompt([{
-                type: "list",
-                message: "Projects",
-                name: "project",
-                choices: projects.map((project) => {
-                    var str = project.print();
-
-                    // Highlight the current project
-                    if(current && project.id === current.id) {
-                        str = `${TeamworkCLI.color.yellow(str)} ${TeamworkCLI.color.blue("(current)")}`;
-                    }
-
-                    return {
-                        name: str,
-                        value: project
-                    };
-                })
-            }]).then((answers) => {
-                return TeamworkCLI.save(answers);
-            }).then(() => {
-                TeamworkCLI.done("Current project updated.");
-            });
-        } else {
-            // Display a static list
-            projects.forEach((project) => {
-                TeamworkCLI.log(project.print());
-            });
-        }
-    });
-});
+if(require.main === module)
+    cli.run(ProjectsCommand);

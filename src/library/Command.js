@@ -20,6 +20,9 @@ export default class Command {
         this.color = cli.format.color;
     }
 
+    /** Default setup. */
+    setup() {}
+
     /**
      * Return an authenticated instance of the Teamwork API
      * from the config.
@@ -122,7 +125,7 @@ export default class Command {
                 debug("getting %s %d from API", type, options[type]);
 
                 const id = parseInt(options[type]);
-                
+
                 if(isNaN(id)) 
                     throw new Error(`Invalid ${capType} id provided. Please supply the six digit ${type} id.`);
 

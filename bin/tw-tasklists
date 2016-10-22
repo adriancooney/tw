@@ -1,47 +1,27 @@
-#!/usr/bin/env babel-node
+#!/usr/bin/env babel-node --
 import Command from "../src/library/Command";
 import * as cli from "../src/cli";
 import { CLIError } from "../src/cli/error";
 
 export default class TasklistsCommand extends Command {
     setup(command) {
-        command
-            .option("-f, --filter <string>", "Filter the tasklists by title containing <string>.");
-
         this.addScopeOptions(command, "List tasks for", ["project"]);
     }
 
     execute(options) {
         return this.getAPI().then(api => {
             return [api, this.requireScopeFromOptions(api, options, ["project"])];
-        }).spread((api, scope) => {
-            return [scope, api.getTasklists(scope)];
-        }).spread((scope, tasklists) => {
-            cli.output.log(cli.output.scope(scope));
-
-            // tasklists.forEach(tasklist => console.log(tasklist.title));
-            cli.output.log(cli.format.list(tasklists, tasklist => `#${tasklist.id} ${this.color.magenta(tasklist.title)}`));
+        }).spread((api, project) => {
+            return [project, api.getTasklists(project)];
+        }).spread((project, tasklists) => {
+            cli.output.log(cli.output.scope(project));
+            cli.output.log(cli.format.list(tasklists, tasklist => {
+                const id = cli.format.fixLength(tasklist.id, 6);
+                return `#${id} ${this.color.magenta(tasklist.title)}`;
+            }));
         });
     }
 }
 
 if(require.main === module)
     cli.run(TasklistsCommand);
-
-// TeamworkCLI.command(() => {
-//     program
-//         .option("-l, --list", "Display tasklists as a static list.")
-//         .parse(process.argv);
-
-//     return TeamworkCLI.getAPI().then((api) => {
-//         var project = TeamworkCLI.getCurrent("project");
-
-//         if(!project) TeamworkCLI.fail(`No project currently selected. Please select a project with ${TeamworkCLI.color.green("tw projects")}.`);
-
-//         return api.getTasklists(project);
-//     }).then((tasklists) => {
-//         return TeamworkCLI.chooseCurrentItem(program.list, "Tasklists", "tasklist", tasklists);
-//     }).then(() => {
-//         TeamworkCLI.done("Current tasklist updated.");
-//     });
-// });

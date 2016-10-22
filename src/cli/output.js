@@ -22,6 +22,9 @@ const loadingState = {};
 /** @type {String} Tick mark. */
 export const TICK = "✓";
 
+/** @type {String} Star */
+export const STAR = "★";
+
 /**
  * Display or hide a loading indicator.
  * @param  {Boolean} isLoading Whether or not to display or hide the indicator.

@@ -41,15 +41,16 @@ export default class Model {
             // Expand the flags to an object
             flags = Model.expandFieldFlags(flags);
 
-            // Validate the field based on the args (throws args if it fails)
-            Model.validateField(flags, fieldName, input); 
-
             // Coercion of Model types, otherwise just call the function with the input
             if(typeof input !== "undefined") {
                 // Coerce each item in an array
                 if(Array.isArray(input) && input.length) {
+                    input.forEach(this.validateField.bind(this, flags, fieldName));
                     input = input.map(Model.coerceField.bind(null, type, flags));
-                } else input = Model.coerceField(type, flags, input);
+                } else {
+                    this.validateField(flags, fieldName, input);
+                    input = Model.coerceField(type, flags, input);
+                }
             }
 
             // Finally, save it to the model
@@ -64,9 +65,13 @@ export default class Model {
         }, {});
     }
 
-    static validateField(flags, fieldName, value) {
+    getModelName() {
+        return this.constructor.name;
+    }
+
+    validateField(flags, fieldName, value) {
         if(flags.required && typeof value === "undefined")
-            throw new Error(`Required field "${fieldName}" not found.`);
+            throw new Error(`Required field "${fieldName}" not found for model ${this.getModelName()}.`);
     }
 
     static coerceField(type, flags, value) {

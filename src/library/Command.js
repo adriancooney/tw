@@ -121,10 +121,15 @@ export default class Command {
             if(options[type]) {
                 debug("getting %s %d from API", type, options[type]);
 
+                const id = parseInt(options[type]);
+                
+                if(isNaN(id)) 
+                    throw new Error(`Invalid ${capType} id provided. Please supply the six digit ${type} id.`);
+
                 // Thank god for API consistency.
                 // Get the from the API the item type by Id. We query the API for the item to 
                 // see if it exists and to display information about what we just logged to.
-                return api[`get${capType}ByID`](Teamwork.parse(type, options[type]));
+                return api[`get${capType}ByID`](id);
             } else if(options[`current${capType}`]) {
                 debug("getting current %s for scope", capType);
                 

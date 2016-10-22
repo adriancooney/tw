@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import wrap from "word-wrap";
+import stripAnsi from "strip-ansi";
 export ellipsize from "ellipsize";
 
 export const color = chalk;
@@ -25,10 +26,40 @@ export function indent(block, chars = "# ") {
     return chars + block.split("\n").join("\n" + chars);
 }
 
-export function alignIndent(string, block, indentation) {
-    if(!indentation) indentation = whitespace(string.length);
-    if(indentation.length < string.length) indentation += whitespace(string.length - indentation.length); // Supplement the indent with whitespace
-    return string + indent(block, indentation).substr(string.length);
+/**
+ * Pad the right side of a string to ensure it is of length.
+ * @param  {String} text   
+ * @param  {Number} length The expected length.
+ * @return {String}        
+ */
+export function fixLength(text, length) {
+    const stripped = stripAnsi(text);
+    if(stripped.length < length) return text + whitespace(length - stripped.length);
+    else return text;
+}
+
+export function list(items, mapper, width = process.stdout.columns) {
+    items = items.map(mapper);
+    const listItems = items.map(stripAnsi);
+
+    // First off, let's find the min and max length of the items
+    const max = listItems.reduce((max, item) => {
+        return item.length > max ? item.length : max;
+    }, 0);
+
+    const columnWidth = max + 1;
+    const columnCount = Math.floor(width / columnWidth);
+    const columnHeight = Math.max(Math.floor(listItems.length / columnCount), 4);
+    const columns = [];
+
+    for(var i = 0; i < columnCount; i++) 
+        columns.push(items.slice(i * columnHeight, i * columnHeight + columnHeight));
+
+    const lines = [];
+    for(var i = 0; i < columnHeight; i++)
+        lines.push(columns.map(column => fixLength(column[i] || "", columnWidth)).join(""));
+
+    return lines.join("\n");
 }
 
 /**
